@@ -1,24 +1,44 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8000/api/auth";
+const API_URL = "http://localhost:8000/api/auth/";
 
-export interface LoginCredentials {
+export interface AuthCredentials {
   username: string;
   password: string;
 }
 
-export interface AuthTokens {
-  access: string;
-  refresh: string;
+export interface RegisterData extends AuthCredentials {
+  email: string;
 }
 
-export async function login(
-  credentials: LoginCredentials
-): Promise<AuthTokens> {
-  const response = await axios.post<AuthTokens>(
-    `${API_URL}/login/`,
-    credentials
+export const registerUser = async (data: RegisterData) => {
+  const response = await axios.post(
+    `${API_URL}register/`,
+    data
   );
 
   return response.data;
-}
+};
+
+export const loginUser = async (data: AuthCredentials) => {
+  const response = await axios.post(
+    `${API_URL}login/`,
+    data
+  );
+
+  return response.data;
+};
+
+export const getCurrentUser = async (accessToken: string) => {
+  const response = await axios.get(
+    `${API_URL}me/`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  return response.data;
+};
+
