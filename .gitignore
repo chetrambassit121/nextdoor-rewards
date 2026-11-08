@@ -25,3 +25,9 @@ build/
 
 # Logs
 *.log
+
+# notes
+notes
+.notes
+notes/
+ 
