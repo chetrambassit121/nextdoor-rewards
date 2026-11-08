@@ -18,21 +18,4 @@ class HealthCheckView(APIView):
         })
 
 
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-    permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
-
-class CurrentUserView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-
-        return Response({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-        })
