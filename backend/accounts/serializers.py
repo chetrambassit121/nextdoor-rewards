@@ -1,5 +1,32 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from rest_framework import serializers
+
+User = get_user_model()
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+        ]
+        read_only_fields = ["id", "username"]
+
+    def validate_email(self, value):
+        email = value.strip()
+
+        if User.objects.exclude(
+            pk=self.instance.pk
+        ).filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                "This email is already in use."
+            )
+
+        return email
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -41,3 +68,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+
+
+
+
+
+
+
+
+
