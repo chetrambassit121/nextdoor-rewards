@@ -1,5 +1,5 @@
 
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,35 +11,17 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/auth/login/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username,
-            password,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Invalid username or password");
-      }
-
-      const data = await response.json();
-
-      await login(data.access, data.refresh);
+      // AuthContext handles the API request and tokens
+      await login(username, password);
 
       navigate("/dashboard", { replace: true });
-    } catch {
+    } catch (err) {
+      console.error("Login failed:", err);
       setError("Login failed. Please check your credentials.");
     }
   };

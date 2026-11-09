@@ -1,6 +1,10 @@
-import axios from "axios";
+import { api, clearAuth } from "./api";
 
-const API_URL = "http://localhost:8000/api/auth/";
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+}
 
 export interface AuthCredentials {
   username: string;
@@ -11,34 +15,44 @@ export interface RegisterData extends AuthCredentials {
   email: string;
 }
 
-export const registerUser = async (data: RegisterData) => {
-  const response = await axios.post(
-    `${API_URL}register/`,
-    data
+export interface LoginResponse {
+  access: string;
+  refresh: string;
+}
+
+// Register a new user
+export async function registerUser(data: RegisterData) {
+  const response = await api.post("/auth/register/", data);
+  return response.data;
+}
+
+// Log in and save JWT tokens
+export async function loginUser(
+  credentials: AuthCredentials
+): Promise<LoginResponse> {
+  const { data } = await api.post<LoginResponse>(
+    "/auth/login/",
+    credentials
   );
 
-  return response.data;
-};
+  localStorage.setItem("access_token", data.access);
+  localStorage.setItem("refresh_token", data.refresh);
 
-export const loginUser = async (data: AuthCredentials) => {
-  const response = await axios.post(
-    `${API_URL}login/`,
-    data
-  );
+  return data;
+}
 
-  return response.data;
-};
+// Get currently authenticated user
+export async function getCurrentUser(): Promise<User> {
+  const { data } = await api.get<User>("/auth/me/");
+  return data;
+}
 
-export const getCurrentUser = async (accessToken: string) => {
-  const response = await axios.get(
-    `${API_URL}me/`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
+// Log out and remove stored tokens
+export function logout(): void {
+  clearAuth();
+}
 
-  return response.data;
-};
+
+
+
 

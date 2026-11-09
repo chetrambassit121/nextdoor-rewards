@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useContext,
@@ -7,19 +6,19 @@ import {
   type ReactNode,
 } from "react";
 
-type User = {
-  id: number;
-  username: string;
-  email: string;
-};
+import {
+  loginUser as loginRequest,
+  logout as logoutRequest,
+  getCurrentUser,
+  type User,
+} from "../services/auth";
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
-  isAuthenticated: boolean;
   loading: boolean;
-  login: (access: string, refresh: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
-};
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(
   undefined
@@ -33,69 +32,54 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    setUser(null);
-  };
-
-  const fetchUser = async (token: string): Promise<User> => {
-    const response = await fetch(
-      "http://localhost:8000/api/auth/me/",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Unable to authenticate user");
-    }
-
-    return response.json();
-  };
-
-  const login = async (access: string, refresh: string) => {
-    const currentUser = await fetchUser(access);
-
-    localStorage.setItem("access_token", access);
-    localStorage.setItem("refresh_token", refresh);
-
-    setUser(currentUser);
-  };
-
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem("access_token");
+    let active = true;
 
-      if (!token) {
-        setLoading(false);
+    async function restoreSession() {
+      const refresh = localStorage.getItem("refresh_token");
+
+      if (!refresh) {
+        if (active) setLoading(false);
         return;
       }
 
       try {
-        const currentUser = await fetchUser(token);
-        setUser(currentUser);
+        const currentUser = await getCurrentUser();
+        if (active) setUser(currentUser);
       } catch {
-        logout();
+        if (active) setUser(null);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
+    }
+
+    const handleLogout = () => {
+      setUser(null);
     };
 
-    checkAuth();
+    window.addEventListener("auth:logout", handleLogout);
+    void restoreSession();
+
+    return () => {
+      active = false;
+      window.removeEventListener("auth:logout", handleLogout);
+    };
   }, []);
+
+  async function login(username: string, password: string) {
+    await loginRequest({ username, password });
+    const currentUser = await getCurrentUser();
+    setUser(currentUser);
+  }
+
+  function logout() {
+    logoutRequest();
+    setUser(null);
+  }
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: user !== null,
-        loading,
-        login,
-        logout,
-      }}
+      value={{ user, loading, login, logout }}
     >
       {children}
     </AuthContext.Provider>
@@ -111,3 +95,4 @@ export function useAuth() {
 
   return context;
 }
+
