@@ -44,9 +44,12 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "corsheaders",
+    "rest_framework_simplejwt.token_blacklist",
+
+    # Local apps
     "core",
     "accounts",
-    "rest_framework_simplejwt.token_blacklist",
+    "community",
 ]
 
 REST_FRAMEWORK = {
