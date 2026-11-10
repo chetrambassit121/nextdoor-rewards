@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (
 
 
 
-from .views import RegisterView, CurrentUserView, UserProfileView
+from .views import RegisterView, CurrentUserView, UserProfileView, ChangePasswordView
 
 
 urlpatterns = [
@@ -39,6 +39,11 @@ urlpatterns = [
         "profile/",
         UserProfileView.as_view(),
         name="user-profile",
+    ),
+    path(
+        "change-password/",
+        ChangePasswordView.as_view(),
+        name="change-password"
     ),
 ]
 

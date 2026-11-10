@@ -1,9 +1,18 @@
 
 import { useState, type SubmitEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
+  const location = useLocation();
+
+  const successMessage = (
+    location.state as { message?: string } | null
+  )?.message;
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -29,7 +38,11 @@ export default function Login() {
   return (
     <div>
       <h1>Login</h1>
-
+      {successMessage && (
+        <p role="status" style={{ color: "green" }}>
+          {successMessage}
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
         <input
           type="text"

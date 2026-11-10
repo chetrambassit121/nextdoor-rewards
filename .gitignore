@@ -30,4 +30,21 @@ build/
 notes
 .notes
 notes/
- 
+
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+.venv/
+venv/
+
+# Local databases
+db.sqlite3
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc

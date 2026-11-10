@@ -1,7 +1,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import axios from "axios";
-
+import { Link } from "react-router-dom";
 import {
   getUserProfile,
   updateUserProfile,
@@ -301,6 +301,9 @@ export default function Profile() {
           </button>
         </div>
       </form>
+      <Link to="/change-password">
+        Change Password
+      </Link>
 
       {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
       {success && <p role="status" style={{ color: "green" }}>{success}</p>}

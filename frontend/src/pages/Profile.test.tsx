@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axios from "axios";
+import { MemoryRouter } from "react-router-dom";
 
 import Profile from "./Profile";
 import {
@@ -27,7 +28,11 @@ const profile = {
 };
 
 async function loadProfile() {
-  render(<Profile />);
+  render(
+    <MemoryRouter>
+      <Profile />
+    </MemoryRouter>
+  );
 
   await screen.findByRole("heading", {
     name: "My Profile",
@@ -45,7 +50,11 @@ describe("Profile Component", () => {
       new Promise(() => {})
     );
 
-    render(<Profile />);
+    render(
+    <MemoryRouter>
+        <Profile />
+    </MemoryRouter>
+    );
 
     expect(
       screen.getByText("Loading profile...")
@@ -75,7 +84,11 @@ describe("Profile Component", () => {
       new Error("Network error")
     );
 
-    render(<Profile />);
+    render(
+        <MemoryRouter>
+            <Profile />
+        </MemoryRouter>
+    );
 
     expect(
       await screen.findByRole("alert")
