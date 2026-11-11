@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -15,6 +16,9 @@ export default function Dashboard() {
       <h1>Nextdoor Rewards Dashboard</h1>
 
       <h2>Welcome, {user?.username}!</h2>
+      <Link to="/community">
+        Go to Community Feed
+      </Link>
       <p>Email: {user?.email}</p>
 
       <button onClick={handleLogout}>
