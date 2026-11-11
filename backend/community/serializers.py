@@ -8,11 +8,11 @@ class PostSerializer(serializers.ModelSerializer):
         read_only=True,
     )
     comments_count = serializers.IntegerField(
-        source="comments.count",
+        source="comments_total",
         read_only=True,
     )
     likes_count = serializers.IntegerField(
-        source="likes.count",
+        source="likes_total",
         read_only=True,
     )
 
