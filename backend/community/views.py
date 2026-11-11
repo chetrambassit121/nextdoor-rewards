@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
+from django.db.models import Count, Exists, OuterRef
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -17,15 +18,26 @@ class PostViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "delete", "head", "options"]
 
     def get_queryset(self):
-        return (
+        queryset = (
             Post.objects
             .select_related("author")
             .annotate(
                 comments_total=Count("comments", distinct=True),
                 likes_total=Count("likes", distinct=True),
             )
-            .order_by("-created_at")
         )
+
+        if self.request.user.is_authenticated:
+            queryset = queryset.annotate(
+                user_has_liked=Exists(
+                    Like.objects.filter(
+                        post_id=OuterRef("pk"),
+                        user=self.request.user,
+                    )
+                )
+            )
+
+        return queryset.order_by("-created_at")
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -116,4 +128,20 @@ class PostViewSet(viewsets.ModelViewSet):
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        post = self.get_queryset().get(
+            pk=serializer.instance.pk
+        )
+
+        response_serializer = self.get_serializer(post)
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
 

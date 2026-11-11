@@ -7,6 +7,7 @@ export interface CommunityPost {
   content: string;
   comments_count: number;
   likes_count: number;
+  is_liked: boolean;
   created_at: string;
   updated_at: string;
 }

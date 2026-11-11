@@ -18,6 +18,7 @@ import {
 
 import "./Community.css";
 
+
 function errorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
@@ -29,10 +30,31 @@ function errorMessage(error: unknown): string {
     if (Array.isArray(data?.content)) {
       return data.content.join(" ");
     }
+
+    if (typeof data?.content === "string") {
+      return data.content;
+    }
+
+    if (error.response?.status === 401) {
+      return "Your session has expired. Please log in again.";
+    }
+
+    if (error.response?.status === 403) {
+      return "You do not have permission to perform this action.";
+    }
+
+    if (error.response?.status === 404) {
+      return "This post could not be found.";
+    }
+
+    if (error.response?.status === 429) {
+      return "Too many requests. Please try again later.";
+    }
   }
 
   return "Something went wrong. Please try again.";
 }
+
 
 export default function Community() {
   const { user } = useAuth();
@@ -51,7 +73,7 @@ export default function Community() {
   const [commentInputs, setCommentInputs] = useState<
     Record<number, string>
   >({});
-  const [likedPosts, setLikedPosts] = useState<number[]>([]);
+  // const [likedPosts, setLikedPosts] = useState<number[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -178,30 +200,40 @@ export default function Community() {
     }
   }
 
+
   async function handleLike(postId: number) {
     if (busyPostId !== null) return;
+
+    const post = posts.find((item) => item.id === postId);
+    if (!post) return;
 
     setBusyPostId(postId);
     setError("");
 
     try {
-      if (likedPosts.includes(postId)) {
+      if (post.is_liked) {
         await unlikePost(postId);
-        setLikedPosts((previous) =>
-          previous.filter((id) => id !== postId)
-        );
       } else {
         await likePost(postId);
-        setLikedPosts((previous) => [...previous, postId]);
       }
 
+      // Fetch authoritative state from Django.
       await refreshPosts();
     } catch (err) {
       setError(errorMessage(err));
+
+      // Recover state if the write succeeded but
+      // the refresh failed or the server rejected it.
+      try {
+        await refreshPosts();
+      } catch {
+        // Keep the original error visible.
+      }
     } finally {
       setBusyPostId(null);
     }
   }
+
 
   return (
     <main className="community-page">
@@ -260,9 +292,12 @@ export default function Community() {
 
         {posts.map((post) => {
           const isAuthor = post.author === user?.username;
-          const isLiked = likedPosts.includes(post.id);
+          // const isLiked = likedPosts.includes(post.id);
+          const isLiked = post.is_liked;
           const commentsVisible = openComments.includes(post.id);
-          const isBusy = busyPostId !== null;
+          const isBusy = busyPostId === post.id;
+          // const isAnyPostBusy = busyPostId !== null;
+          const isAnyPostBusy = busyPostId !== null;
 
           return (
             <article className="community-card" key={post.id}>
@@ -277,7 +312,8 @@ export default function Community() {
                 {isAuthor && (
                   <button
                     className="community-delete"
-                    disabled={isBusy}
+                    // disabled={isBusy}
+                    disabled={isAnyPostBusy}
                     onClick={() => void handleDeletePost(post.id)}
                   >
                     Delete
@@ -291,7 +327,7 @@ export default function Community() {
 
               <div className="community-actions">
                 <button
-                  disabled={isAuthor || isBusy}
+                  disabled={isAuthor || isAnyPostBusy}
                   aria-pressed={isLiked}
                   onClick={() => void handleLike(post.id)}
                 >
@@ -299,7 +335,8 @@ export default function Community() {
                 </button>
 
                 <button
-                  disabled={isBusy}
+                  // disabled={isBusy}
+                  disabled={isAnyPostBusy}
                   aria-expanded={commentsVisible}
                   onClick={() =>
                     void handleToggleComments(post.id)

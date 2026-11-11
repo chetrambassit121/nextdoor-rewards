@@ -1,5 +1,6 @@
+
 from rest_framework import serializers
-from .models import Post, Comment, Like
+from .models import Post, Comment
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -15,6 +16,7 @@ class PostSerializer(serializers.ModelSerializer):
         source="likes_total",
         read_only=True,
     )
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -24,6 +26,7 @@ class PostSerializer(serializers.ModelSerializer):
             "content",
             "comments_count",
             "likes_count",
+            "is_liked",
             "created_at",
             "updated_at",
         ]
@@ -33,6 +36,29 @@ class PostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def get_is_liked(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            return False
+
+        return getattr(obj, "user_has_liked", False)
+
+    def validate_content(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                "Post content cannot be empty."
+            )
+
+        if len(value) > 2000:
+            raise serializers.ValidationError(
+                "Post content cannot exceed 2000 characters."
+            )
+
+        return value
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -56,3 +82,18 @@ class CommentSerializer(serializers.ModelSerializer):
             "post",
             "created_at",
         ]
+
+    def validate_content(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                "Comment content cannot be empty."
+            )
+
+        if len(value) > 1000:
+            raise serializers.ValidationError(
+                "Comment content cannot exceed 1000 characters."
+            )
+
+        return value

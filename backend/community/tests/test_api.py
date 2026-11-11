@@ -286,3 +286,87 @@ def test_post_comment_and_like_counts(
     assert response.status_code == 200
     assert response.data["comments_count"] == 1
     assert response.data["likes_count"] == 1
+
+
+
+def test_post_is_liked_by_current_user(
+    other_client, post, other_user
+):
+    Like.objects.create(
+        user=other_user,
+        post=post,
+    )
+
+    response = other_client.get(
+        reverse("post-detail", args=[post.id])
+    )
+
+    assert response.status_code == 200
+    assert response.data["is_liked"] is True
+    assert response.data["likes_count"] == 1
+
+
+def test_post_is_not_liked_by_anonymous_user(
+    api_client, post, other_user
+):
+    Like.objects.create(
+        user=other_user,
+        post=post,
+    )
+
+    response = api_client.get(
+        reverse("post-detail", args=[post.id])
+    )
+
+    assert response.status_code == 200
+    assert response.data["is_liked"] is False
+    assert response.data["likes_count"] == 1
+
+
+def test_new_post_returns_like_state(
+    authenticated_client
+):
+    response = authenticated_client.post(
+        reverse("post-list"),
+        {"content": "My new post"},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["is_liked"] is False
+    assert response.data["likes_count"] == 0
+    assert response.data["comments_count"] == 0
+
+
+@pytest.mark.parametrize(
+    "content",
+    ["   ", "x" * 2001],
+)
+def test_invalid_post_content(
+    authenticated_client, content
+):
+    response = authenticated_client.post(
+        reverse("post-list"),
+        {"content": content},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert Post.objects.count() == 0
+
+
+@pytest.mark.parametrize(
+    "content",
+    ["   ", "x" * 1001],
+)
+def test_invalid_comment_content(
+    other_client, post, content
+):
+    response = other_client.post(
+        reverse("post-comments", args=[post.id]),
+        {"content": content},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert Comment.objects.count() == 0
