@@ -1,4 +1,6 @@
-from django.db.models import Count
+from django.db import transaction
+from django.db.models import Count, Exists, OuterRef
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
@@ -7,9 +9,11 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
+from rewards.services import award_activity_points
+
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
-from django.db.models import Count, Exists, OuterRef
+
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -39,8 +43,19 @@ class PostViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by("-created_at")
 
+    
+    @transaction.atomic
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        post = serializer.save(
+            author=self.request.user
+        )
+
+        award_activity_points(
+            user=self.request.user,
+            activity_type="post",
+            reference_id=post.pk,
+        )
+
 
     def destroy(self, request, *args, **kwargs):
         post = self.get_object()
@@ -76,13 +91,26 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        
         serializer = CommentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user, post=post)
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED,
+        with transaction.atomic():
+            comment = serializer.save(
+                user=request.user,
+                post=post,
+            )
+
+            award_activity_points(
+                user=request.user,
+                activity_type="comment",
+                reference_id=comment.pk,
+            )
+
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
         )
 
     @action(
@@ -93,22 +121,33 @@ class PostViewSet(viewsets.ModelViewSet):
     def like(self, request, pk=None):
         post = self.get_object()
 
+        # POST: Like another user's post
         if request.method == "POST":
+
             if post.author_id == request.user.id:
                 return Response(
                     {"detail": "You cannot like your own post."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            like, created = Like.objects.get_or_create(
-                user=request.user,
-                post=post,
-            )
+            with transaction.atomic():
+                like, created = Like.objects.get_or_create(
+                    user=request.user,
+                    post=post,
+                )
 
-            if not created:
-                return Response(
-                    {"detail": "You already liked this post."},
-                    status=status.HTTP_400_BAD_REQUEST,
+                if not created:
+                    return Response(
+                        {"detail": "You already liked this post."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # Award points to the POST AUTHOR
+                # because their post received a like.
+                award_activity_points(
+                    user=post.author,
+                    activity_type="like",
+                    reference_id=like.pk,
                 )
 
             return Response(
@@ -116,18 +155,16 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
 
-        deleted_count, _ = Like.objects.filter(
-            user=request.user,
-            post=post,
-        ).delete()
-
-        if deleted_count == 0:
-            return Response(
-                {"detail": "You have not liked this post."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        # DELETE: Temporarily disable unlike
+        return Response(
+            {
+                "detail": (
+                    "Removing likes is temporarily unavailable "
+                    "until reward reversal support is implemented."
+                )
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

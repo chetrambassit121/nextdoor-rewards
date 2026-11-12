@@ -1,4 +1,3 @@
-
 import pytest
 
 from django.contrib.auth import get_user_model
@@ -14,6 +13,20 @@ from rewards.models import (
 
 
 User = get_user_model()
+
+'''
+Understand What We're Testing
+UserRewardProfile
+We verify that a new reward profile starts with zero points, belongs to exactly one user, and has the correct string representation.
+RewardTransaction
+We verify that transactions store activity details, support negative point adjustments, and reject duplicate idempotency keys.
+
+The database constraint protects against duplicate records, but it does not automatically award points or update balances. We'll implement that logic separately.
+RewardMilestone
+We verify that milestone requirements are stored correctly and that default values work as expected.
+UserMilestone
+We verify that users can unlock achievements, cannot unlock the same achievement twice, and that earned milestone definitions are protected from deletion.
+'''
 
 
 @pytest.fixture

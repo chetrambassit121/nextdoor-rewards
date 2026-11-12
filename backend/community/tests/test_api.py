@@ -240,8 +240,14 @@ def test_unlike_post(other_client, post, other_user):
         reverse("post-like", args=[post.id])
     )
 
-    assert response.status_code == 204
-    assert Like.objects.count() == 0
+    # Unlike is temporarily disabled
+    assert response.status_code == 409
+
+    # The existing like must remain in the database
+    assert Like.objects.filter(
+        user=other_user,
+        post=post,
+    ).exists()
 
 
 def test_unlike_not_liked_post(other_client, post):
@@ -249,7 +255,10 @@ def test_unlike_not_liked_post(other_client, post):
         reverse("post-like", args=[post.id])
     )
 
-    assert response.status_code == 404
+    # DELETE is disabled even if the user hasn't liked the post
+    assert response.status_code == 409
+
+    assert Like.objects.count() == 0
 
 
 def test_like_requires_authentication(api_client, post):
