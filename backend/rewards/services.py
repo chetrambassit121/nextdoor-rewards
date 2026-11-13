@@ -9,6 +9,10 @@ from .models import (
     UserMilestone,
 )
 
+from django.db import transaction
+from django.db.models import F, Sum, Value
+from django.db.models.functions import Greatest
+
 
 '''
 Understanding the functions
@@ -131,6 +135,73 @@ def award_activity_points(
     return reward, True
 
 
+@transaction.atomic
+def reverse_activity_points(activity_type, reference_id):
+    """
+    Reverse points awarded for an activity.
+
+    Returns:
+        (reversal_transaction, created)
+
+    If the original activity earned no points,
+    returns (None, False).
+    """
+    if activity_type not in (
+        RewardTransaction.ActivityType.POST,
+        RewardTransaction.ActivityType.COMMENT,
+        RewardTransaction.ActivityType.LIKE,
+    ):
+        raise ValueError("Unsupported reversal activity type.")
+
+    original_key = f"{activity_type}:{reference_id}:create"
+    reversal_key = f"{activity_type}:{reference_id}:reverse"
+
+    original = RewardTransaction.objects.filter(
+        idempotency_key=original_key,
+    ).first()
+
+    if original is None:
+        return None, False
+
+    # Lock the recipient to serialize reward changes.
+    type(original.user).objects.select_for_update().get(
+        pk=original.user_id
+    )
+
+    reversal, created = RewardTransaction.objects.get_or_create(
+        idempotency_key=reversal_key,
+        defaults={
+            "user_id": original.user_id,
+            "activity_type": RewardTransaction.ActivityType.REVERSAL,
+            "reference_id": reference_id,
+            "points": -original.points,
+        },
+    )
+
+    if not created:
+        return reversal, False
+
+    # Preserve the original and reversal transactions.
+    # Clamp balances to zero to respect PositiveIntegerField.
+    profile, _ = UserRewardProfile.objects.get_or_create(
+        user_id=original.user_id
+    )
+
+    UserRewardProfile.objects.filter(pk=profile.pk).update(
+        total_points=Greatest(
+            F("total_points") - original.points,
+            Value(0),
+        ),
+        available_points=Greatest(
+            F("available_points") - original.points,
+            Value(0),
+        ),
+    )
+
+    return reversal, True
+
+
+
 def _milestone_progress(user, milestone_type):
     """
     Calculate a user's progress toward a milestone.
@@ -146,20 +217,20 @@ def _milestone_progress(user, milestone_type):
             post__author=user
         ).exclude(user=user).count()
 
+    
     if milestone_type == RewardMilestone.MilestoneType.POINTS:
-        # Only base activity points count toward points milestones.
-        # Milestone bonuses do not recursively unlock milestones.
-        return (
+        return max(
+            0,
             RewardTransaction.objects.filter(
                 user=user,
-                points__gt=0,
             )
             .exclude(
                 activity_type=RewardTransaction.ActivityType.MILESTONE
             )
             .aggregate(total=Sum("points"))["total"]
-            or 0
+            or 0,
         )
+
 
     return 0
 

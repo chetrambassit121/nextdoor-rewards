@@ -9,7 +9,10 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
-from rewards.services import award_activity_points
+from rewards.services import (
+    award_activity_points,
+    reverse_activity_points,
+)
 
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
@@ -57,16 +60,50 @@ class PostViewSet(viewsets.ModelViewSet):
         )
 
 
+   
+    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         post = self.get_object()
 
         if post.author_id != request.user.id:
             return Response(
-                {"detail": "You can only delete your own posts."},
+                {
+                    "detail": "You can only delete your own posts."
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        return super().destroy(request, *args, **kwargs)
+        # Reverse rewards for comments on this post.
+        for comment_id in post.comments.values_list(
+            "pk", flat=True
+        ).iterator():
+            reverse_activity_points(
+                activity_type="comment",
+                reference_id=comment_id,
+            )
+
+        # Reverse rewards for likes received.
+        for like_id in post.likes.values_list(
+            "pk", flat=True
+        ).iterator():
+            reverse_activity_points(
+                activity_type="like",
+                reference_id=like_id,
+            )
+
+        # Reverse the post author's creation reward.
+        reverse_activity_points(
+            activity_type="post",
+            reference_id=post.pk,
+        )
+
+        # Django cascades deletion to comments and likes.
+        post.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
 
     @action(
         detail=True,
@@ -113,6 +150,50 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
         )
 
+    
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path=r"comments/(?P<comment_id>[0-9]+)",
+        permission_classes=[IsAuthenticated],
+    )
+    def delete_comment(
+        self, request, pk=None, comment_id=None
+    ):
+        post = self.get_object()
+
+        comment = Comment.objects.filter(
+            pk=comment_id,
+            post=post,
+        ).first()
+
+        if comment is None:
+            return Response(
+                {"detail": "Comment not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if comment.user_id != request.user.id:
+            return Response(
+                {
+                    "detail": "You can only delete your own comments."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        with transaction.atomic():
+            reverse_activity_points(
+                activity_type="comment",
+                reference_id=comment.pk,
+            )
+
+            comment.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
     @action(
         detail=True,
         methods=["post", "delete"],
@@ -155,16 +236,31 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
 
-        # DELETE: Temporarily disable unlike
-        return Response(
-            {
-                "detail": (
-                    "Removing likes is temporarily unavailable "
-                    "until reward reversal support is implemented."
+       
+        # DELETE: Unlike a post and reverse the reward.
+        with transaction.atomic():
+            like = Like.objects.filter(
+                user=request.user,
+                post=post,
+            ).first()
+
+            if like is None:
+                return Response(
+                    {"detail": "You have not liked this post."},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
-            },
-            status=status.HTTP_409_CONFLICT,
+
+            reverse_activity_points(
+                activity_type="like",
+                reference_id=like.pk,
+            )
+
+            like.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
         )
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

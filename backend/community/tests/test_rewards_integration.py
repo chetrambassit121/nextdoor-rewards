@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from community.models import Post
+from community.models import Post, Comment, Like
 from rewards.models import (
     UserRewardProfile,
     RewardTransaction,
@@ -197,14 +197,14 @@ def test_self_like_rejected(client_for, user):
     assert RewardTransaction.objects.count() == 0
 
 
-# Test 8: Unliking is temporarily disabled.
+# Test 8: Test 8 — Unlike reverses points
 
-def test_unlike_temporarily_disabled(
+def test_unlike_reverses_points(
     neighbor_client, user
 ):
     post = Post.objects.create(
         author=user,
-        content="Test post",
+        content="Unlike reversal test",
     )
 
     url = reverse("post-like", args=[post.pk])
@@ -213,7 +213,180 @@ def test_unlike_temporarily_disabled(
 
     response = neighbor_client.delete(url)
 
-    assert response.status_code == 409
+    assert response.status_code == 204
 
     profile = UserRewardProfile.objects.get(user=user)
-    assert profile.total_points == 2
+
+    assert profile.total_points == 0
+    assert Like.objects.count() == 0
+
+    assert RewardTransaction.objects.filter(
+        activity_type="reversal"
+    ).count() == 1
+
+
+# Test 9 — Deleting a post reverses its points
+
+def test_delete_post_reverses_points(client_for, user):
+    response = client_for.post(
+        reverse("post-list"),
+        {"content": "Post to delete"},
+        format="json",
+    )
+
+    assert response.status_code == 201
+
+    post_id = response.data["id"]
+
+    delete_response = client_for.delete(
+        reverse("post-detail", args=[post_id])
+    )
+
+    assert delete_response.status_code == 204
+
+    profile = UserRewardProfile.objects.get(user=user)
+
+    assert profile.total_points == 0
+    assert not Post.objects.filter(pk=post_id).exists()
+
+
+# Test 10 — Deleting a post reverses associated likes
+
+
+def test_delete_post_reverses_likes(
+    client_for, neighbor_client, user
+):
+    post = Post.objects.create(
+        author=user,
+        content="Post with likes",
+    )
+
+    response = neighbor_client.post(
+        reverse("post-like", args=[post.pk])
+    )
+
+    assert response.status_code == 201
+
+    delete_response = client_for.delete(
+        reverse("post-detail", args=[post.pk])
+    )
+
+    assert delete_response.status_code == 204
+
+    profile = UserRewardProfile.objects.get(user=user)
+
+    assert profile.total_points == 0
+    assert Like.objects.count() == 0
+
+
+# Test 11 — Deleting a comment reverses its points
+
+
+def test_delete_comment_reverses_points(
+    client_for, user, neighbor
+):
+    post = Post.objects.create(
+        author=neighbor,
+        content="Neighborhood post",
+    )
+
+    response = client_for.post(
+        reverse("post-comments", args=[post.pk]),
+        {"content": "My comment"},
+        format="json",
+    )
+
+    assert response.status_code == 201
+
+    comment_id = response.data["id"]
+
+    delete_response = client_for.delete(
+        reverse(
+            "post-delete-comment",
+            args=[post.pk, comment_id],
+        )
+    )
+
+    assert delete_response.status_code == 204
+
+    profile = UserRewardProfile.objects.get(user=user)
+
+    assert profile.total_points == 0
+    assert not Comment.objects.filter(
+        pk=comment_id
+    ).exists()
+
+
+# Test 12 — Deleting someone else's post is forbidden
+
+def test_cannot_delete_other_users_post(
+    neighbor_client, user
+):
+    post = Post.objects.create(
+        author=user,
+        content="Protected post",
+    )
+
+    response = neighbor_client.delete(
+        reverse("post-detail", args=[post.pk])
+    )
+
+    assert response.status_code == 403
+    assert Post.objects.filter(pk=post.pk).exists()
+
+
+# Test 13 — Deleting a post reverses commenters' points
+
+
+def test_delete_post_reverses_comment_rewards(
+    client_for, neighbor_client, user, neighbor
+):
+    post = Post.objects.create(
+        author=user,
+        content="Post with neighbor comment",
+    )
+
+    response = neighbor_client.post(
+        reverse("post-comments", args=[post.pk]),
+        {"content": "Neighbor comment"},
+        format="json",
+    )
+
+    assert response.status_code == 201
+
+    profile = UserRewardProfile.objects.get(user=neighbor)
+    assert profile.total_points == 5
+
+    delete_response = client_for.delete(
+        reverse("post-detail", args=[post.pk])
+    )
+
+    assert delete_response.status_code == 204
+
+    profile.refresh_from_db()
+    assert profile.total_points == 0
+    assert Comment.objects.count() == 0
+
+
+# Test 14 — Repeated unlike returns 404
+
+
+def test_unlike_twice_returns_404(
+    neighbor_client, user
+):
+    post = Post.objects.create(
+        author=user,
+        content="Repeated unlike test",
+    )
+
+    url = reverse("post-like", args=[post.pk])
+
+    assert neighbor_client.post(url).status_code == 201
+    assert neighbor_client.delete(url).status_code == 204
+    assert neighbor_client.delete(url).status_code == 404
+
+    assert RewardTransaction.objects.filter(
+        activity_type="reversal"
+    ).count() == 1
+
+
