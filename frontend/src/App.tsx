@@ -9,6 +9,9 @@ import Community from "./pages/Community";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChangePassword from "./pages/ChangePassword";
 
+import RewardsDashboard from "./pages/RewardsDashboard";
+
+
 export default function App() {
   return (
     <Routes>
@@ -23,12 +26,21 @@ export default function App() {
           element={<ChangePassword />}
         />
         <Route path="/community" element={<Community />} />
+        <Route
+        path="/rewards"
+        element={
+          <RewardsDashboard />
+        }
+      />
       </Route>
 
       <Route
         path="/"
         element={<Navigate to="/dashboard" replace />}
       />
+
+     
+
     </Routes>
   );
 }

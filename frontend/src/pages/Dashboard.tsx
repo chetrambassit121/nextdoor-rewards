@@ -19,6 +19,7 @@ export default function Dashboard() {
       <Link to="/community">
         Go to Community Feed
       </Link>
+      <Link to="/rewards">View My Rewards</Link>
       <p>Email: {user?.email}</p>
 
       <button onClick={handleLogout}>
