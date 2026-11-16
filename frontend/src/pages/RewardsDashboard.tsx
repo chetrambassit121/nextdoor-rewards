@@ -17,6 +17,7 @@ import type {
 
 import "./RewardsDashboard.css";
 
+
 export default function RewardsDashboard() {
   const [profile, setProfile] = useState<RewardProfile | null>(null);
   const [transactions, setTransactions] = useState<RewardTransaction[]>([]);
@@ -97,14 +98,18 @@ export default function RewardsDashboard() {
         >
           Refresh Rewards
         </button>
+        {/* <Link to="/dashboard" className="back-button">
+          ← Back to Dashboard
+        </Link> */}
+
       </header>
 
       <section className="rewards-summary" aria-label="Reward Points">
         <div className="rewards-summary-card total">
           <span className="summary-icon" aria-hidden="true">★</span>
-          <p>Total points earned</p>
+          <p>Net points earned</p>
           <strong>{profile?.total_points ?? 0}</strong>
-          <span>Lifetime points</span>
+          <span>After activity reversals</span>
           <p>Total: {profile?.total_points ?? 0}</p>
         </div>
 
@@ -113,8 +118,7 @@ export default function RewardsDashboard() {
           <p>Available points</p>
           <strong>{profile?.available_points ?? 0}</strong>
           <span>Current balance</span>
-          <p>Available: {profile?.available_points ?? 0}</p>
-        </div>
+        </div>0
       </section>
 
       <section className="rewards-section">

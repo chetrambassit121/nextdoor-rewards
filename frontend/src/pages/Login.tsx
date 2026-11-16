@@ -1,6 +1,7 @@
 
 import { useState, type SubmitEvent } from "react";
 import {
+  Link,
   useNavigate,
   useLocation,
 } from "react-router-dom";
@@ -64,6 +65,11 @@ export default function Login() {
       </form>
 
       {error && <p>{error}</p>}
+
+      <p style={{ marginTop: "16px" }}>
+        Don't have an account?{" "}
+        <Link to="/register">Register here</Link>
+      </p>
     </div>
   );
 }

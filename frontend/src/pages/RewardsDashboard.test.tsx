@@ -143,7 +143,11 @@ describe("Rewards Dashboard", () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("Available: 150")
+      screen.getByText("Available points")
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("150")
     ).toBeInTheDocument();
   });
 

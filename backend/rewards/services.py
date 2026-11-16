@@ -1,17 +1,15 @@
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Value
+from django.db.models.functions import Greatest
 
 from community.models import Post, Comment, Like
+
 from .models import (
     UserRewardProfile,
     RewardTransaction,
     RewardMilestone,
     UserMilestone,
 )
-
-from django.db import transaction
-from django.db.models import F, Sum, Value
-from django.db.models.functions import Greatest
 
 
 '''

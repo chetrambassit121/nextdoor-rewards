@@ -15,7 +15,9 @@ A few important design decisions:
 - idempotency_key prevents the same reward event from being recorded twice.
 - UniqueConstraint prevents duplicate milestone achievements.
 - on_delete=models.PROTECT preserves milestone definitions that users have already earned.
-- total_points represents lifetime earned points, while available_points is intended for future spending or deductions.
+- total_points: net points after activity reversals.
+  available_points: current points balance.
+  Earned milestones remain unlocked after activity deletion.
 '''
 
 
