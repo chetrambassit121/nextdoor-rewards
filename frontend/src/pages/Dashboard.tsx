@@ -1,30 +1,39 @@
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
-  };
+  const { user } = useAuth();
 
   return (
-    <div>
-      <h1>Nextdoor Rewards Dashboard</h1>
+    <main>
+      <h1>Welcome back, {user?.username}!</h1>
 
-      <h2>Welcome, {user?.username}!</h2>
-      <Link to="/community">
-        Go to Community Feed
-      </Link>
-      <Link to="/rewards">View My Rewards</Link>
-      <p>Email: {user?.email}</p>
+      <p>
+        Here's what's happening in your neighborhood.
+      </p>
 
-      <button onClick={handleLogout}>
-        Logout
-      </button>
-    </div>
+      <section style={{ marginTop: "32px" }}>
+        <h2>Quick Access</h2>
+
+        <div style={{
+          display: "flex",
+          gap: "16px",
+          marginTop: "16px",
+          flexWrap: "wrap"
+        }}>
+          <Link to="/community">
+            Explore Community
+          </Link>
+
+          <Link to="/rewards">
+            View My Rewards
+          </Link>
+
+          <Link to="/profile">
+            My Profile
+          </Link>
+        </div>
+      </section>
+    </main>
   );
 }
