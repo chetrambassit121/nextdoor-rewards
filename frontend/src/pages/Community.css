@@ -184,3 +184,29 @@
     flex-wrap: wrap;
   }
 }
+
+
+.post-card .community-comments textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-h);
+  font: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.post-card .community-comments form button {
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 0;
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.post-card .community-comments form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

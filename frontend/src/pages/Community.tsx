@@ -1,8 +1,9 @@
-
 import { useEffect, useState, type FormEvent } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext";
+import PostCard from "../components/community/PostCard";
 
 import {
   getPosts,
@@ -17,7 +18,6 @@ import {
 } from "../services/community";
 
 import "./Community.css";
-
 
 function errorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -55,7 +55,6 @@ function errorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-
 export default function Community() {
   const { user } = useAuth();
 
@@ -69,23 +68,32 @@ export default function Community() {
   const [comments, setComments] = useState<
     Record<number, CommunityComment[]>
   >({});
+
   const [openComments, setOpenComments] = useState<number[]>([]);
+
   const [commentInputs, setCommentInputs] = useState<
     Record<number, string>
   >({});
-  // const [likedPosts, setLikedPosts] = useState<number[]>([]);
 
+  // Fetch community posts on initial load.
   useEffect(() => {
     let active = true;
 
     async function loadPosts() {
       try {
         const data = await getPosts();
-        if (active) setPosts(data);
+
+        if (active) {
+          setPosts(data);
+        }
       } catch (err) {
-        if (active) setError(errorMessage(err));
+        if (active) {
+          setError(errorMessage(err));
+        }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -96,15 +104,18 @@ export default function Community() {
     };
   }, []);
 
+  // Refresh posts using Django as the source of truth.
   async function refreshPosts() {
     const data = await getPosts();
     setPosts(data);
   }
 
+  // Create a new community post.
   async function handleCreatePost(event: FormEvent) {
     event.preventDefault();
 
     const trimmed = content.trim();
+
     if (!trimmed || posting) return;
 
     setPosting(true);
@@ -121,7 +132,10 @@ export default function Community() {
     }
   }
 
+  // Delete a post owned by the authenticated user.
   async function handleDeletePost(postId: number) {
+    if (busyPostId !== null) return;
+
     if (!window.confirm("Delete this post?")) return;
 
     setBusyPostId(postId);
@@ -129,8 +143,13 @@ export default function Community() {
 
     try {
       await deletePost(postId);
+
       setPosts((previous) =>
         previous.filter((post) => post.id !== postId)
+      );
+
+      setOpenComments((previous) =>
+        previous.filter((id) => id !== postId)
       );
     } catch (err) {
       setError(errorMessage(err));
@@ -139,7 +158,10 @@ export default function Community() {
     }
   }
 
+  // Open or close comments for a post.
   async function handleToggleComments(postId: number) {
+    if (busyPostId !== null) return;
+
     if (openComments.includes(postId)) {
       setOpenComments((previous) =>
         previous.filter((id) => id !== postId)
@@ -152,10 +174,12 @@ export default function Community() {
 
     try {
       const data = await getComments(postId);
+
       setComments((previous) => ({
         ...previous,
         [postId]: data,
       }));
+
       setOpenComments((previous) => [...previous, postId]);
     } catch (err) {
       setError(errorMessage(err));
@@ -164,6 +188,7 @@ export default function Community() {
     }
   }
 
+  // Create a comment on a community post.
   async function handleCreateComment(
     event: FormEvent,
     postId: number
@@ -171,6 +196,7 @@ export default function Community() {
     event.preventDefault();
 
     const text = (commentInputs[postId] || "").trim();
+
     if (!text || busyPostId !== null) return;
 
     setBusyPostId(postId);
@@ -200,11 +226,12 @@ export default function Community() {
     }
   }
 
-
+  // Like or unlike a post.
   async function handleLike(postId: number) {
     if (busyPostId !== null) return;
 
     const post = posts.find((item) => item.id === postId);
+
     if (!post) return;
 
     setBusyPostId(postId);
@@ -222,8 +249,7 @@ export default function Community() {
     } catch (err) {
       setError(errorMessage(err));
 
-      // Recover state if the write succeeded but
-      // the refresh failed or the server rejected it.
+      // Recover server state if the request partially succeeded.
       try {
         await refreshPosts();
       } catch {
@@ -234,129 +260,118 @@ export default function Community() {
     }
   }
 
-
   return (
     <main className="community-page">
+      {/* Page header */}
       <header className="community-header">
         <div>
           <h1>Neighborhood Feed</h1>
           <p>Connect with your neighbors.</p>
         </div>
 
-        <Link to="/dashboard" className="community-back">
+        <Link
+          to="/dashboard"
+          className="community-back"
+        >
           Dashboard
         </Link>
       </header>
 
-      <section className="community-card">
-        <h2>Create a Post</h2>
-
-        <form onSubmit={handleCreatePost}>
-          <textarea
-            value={content}
-            onChange={(event) =>
-              setContent(event.target.value)
-            }
-            placeholder="What's happening in your neighborhood?"
-            rows={4}
-            maxLength={2000}
-            required
-          />
-
-          <div className="community-form-footer">
-            <span>{content.length}/2000</span>
-            <button
-              type="submit"
-              disabled={!content.trim() || posting}
-            >
-              {posting ? "Posting..." : "Create Post"}
-            </button>
-          </div>
-        </form>
-      </section>
-
+      {/* Error message */}
       {error && (
         <p className="community-error" role="alert">
           {error}
         </p>
       )}
 
+      {/* Create post form */}
+      <section
+        className="community-create"
+        aria-label="Create Post"
+      >
+        <h2>Share with your neighbors</h2>
+
+        <form onSubmit={(event) => void handleCreatePost(event)}>
+          <textarea
+            placeholder="What's happening in your neighborhood?"
+            value={content}
+            onChange={(event) =>
+              setContent(event.target.value)
+            }
+            rows={3}
+            maxLength={2000}
+            required
+            disabled={posting}
+          />
+
+          <button
+            type="submit"
+            disabled={posting || !content.trim()}
+          >
+            {posting ? "Posting..." : "Create Post"}
+          </button>
+        </form>
+      </section>
+
+      {/* Community feed */}
       <section className="community-feed">
         <h2>Recent Posts</h2>
 
-        {loading && <p>Loading community posts...</p>}
+        {loading && (
+          <p>Loading community posts...</p>
+        )}
 
         {!loading && posts.length === 0 && (
           <p>No posts yet. Be the first to post!</p>
         )}
 
-        {posts.map((post) => {
-          const isAuthor = post.author === user?.username;
-          // const isLiked = likedPosts.includes(post.id);
-          const isLiked = post.is_liked;
-          const commentsVisible = openComments.includes(post.id);
-          const isBusy = busyPostId === post.id;
-          // const isAnyPostBusy = busyPostId !== null;
-          const isAnyPostBusy = busyPostId !== null;
+        {!loading &&
+          posts.map((post) => {
+            const isAuthor =
+              post.author === user?.username;
 
-          return (
-            <article className="community-card" key={post.id}>
-              <div className="community-post-header">
-                <div>
-                  <strong>@{post.author}</strong>
-                  <time dateTime={post.created_at}>
-                    {new Date(post.created_at).toLocaleString()}
-                  </time>
-                </div>
+            const commentsVisible =
+              openComments.includes(post.id);
 
-                {isAuthor && (
-                  <button
-                    className="community-delete"
-                    // disabled={isBusy}
-                    disabled={isAnyPostBusy}
-                    onClick={() => void handleDeletePost(post.id)}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
+            const isBusy =
+              busyPostId === post.id;
 
-              <p className="community-post-content">
-                {post.content}
-              </p>
+            const isAnyPostBusy =
+              busyPostId !== null;
 
-              <div className="community-actions">
-                <button
-                  disabled={isAuthor || isAnyPostBusy}
-                  aria-pressed={isLiked}
-                  onClick={() => void handleLike(post.id)}
-                >
-                  {isLiked ? "♥ Liked" : "♡ Like"} ({post.likes_count})
-                </button>
-
-                <button
-                  // disabled={isBusy}
-                  disabled={isAnyPostBusy}
-                  aria-expanded={commentsVisible}
-                  onClick={() =>
-                    void handleToggleComments(post.id)
-                  }
-                >
-                  Comments ({post.comments_count})
-                </button>
-              </div>
-
-              {commentsVisible && (
+            return (
+              <PostCard
+                key={post.id}
+                post={post}
+                isAuthor={isAuthor}
+                isBusy={isBusy}
+                isAnyPostBusy={isAnyPostBusy}
+                commentsVisible={commentsVisible}
+                onLike={(id) =>
+                  void handleLike(id)
+                }
+                onToggleComments={(id) =>
+                  void handleToggleComments(id)
+                }
+                onDelete={(id) =>
+                  void handleDeletePost(id)
+                }
+              >
                 <div className="community-comments">
-                  {(comments[post.id] || []).map((comment) => (
-                    <div
-                      className="community-comment"
-                      key={comment.id}
-                    >
-                      <strong>@{comment.user}</strong>
-                      <p>{comment.content}</p>
-                    </div>
-                  ))}
+                  {(comments[post.id] || []).map(
+                    (comment) => (
+                      <div
+                        className="community-comment"
+                        key={comment.id}
+                      >
+                        <strong>
+                          @{comment.user}
+                        </strong>
+
+                        <p>{comment.content}</p>
+                      </div>
+                    )
+                  )}
 
                   {!isAuthor && (
                     <form
@@ -369,23 +384,31 @@ export default function Community() {
                     >
                       <textarea
                         placeholder="Write a comment..."
-                        value={commentInputs[post.id] || ""}
+                        value={
+                          commentInputs[post.id] || ""
+                        }
                         onChange={(event) =>
-                          setCommentInputs((previous) => ({
-                            ...previous,
-                            [post.id]: event.target.value,
-                          }))
+                          setCommentInputs(
+                            (previous) => ({
+                              ...previous,
+                              [post.id]:
+                                event.target.value,
+                            })
+                          )
                         }
                         rows={2}
                         maxLength={1000}
                         required
+                        disabled={isBusy}
                       />
 
                       <button
                         type="submit"
                         disabled={
-                          isBusy ||
-                          !(commentInputs[post.id] || "").trim()
+                          isAnyPostBusy ||
+                          !(
+                            commentInputs[post.id] || ""
+                          ).trim()
                         }
                       >
                         Comment
@@ -393,10 +416,9 @@ export default function Community() {
                     </form>
                   )}
                 </div>
-              )}
-            </article>
-          );
-        })}
+              </PostCard>
+            );
+          })}
       </section>
     </main>
   );
