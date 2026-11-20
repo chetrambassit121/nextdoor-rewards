@@ -5,6 +5,7 @@ interface PostCardProps {
   post: CommunityPost;
   isAuthor: boolean;
   isBusy: boolean;
+  isLiking: boolean;
   isAnyPostBusy: boolean;
   commentsVisible: boolean;
   onLike: (postId: number) => void;
@@ -43,6 +44,7 @@ export default function PostCard({
   post,
   isAuthor,
   isBusy,
+  isLiking,
   isAnyPostBusy,
   commentsVisible,
   onLike,
@@ -108,22 +110,34 @@ export default function PostCard({
       </div>
 
       <div className="post-card-actions">
-        <button
-          type="button"
-          className={
+        
+      <button
+        type="button"
+        className={
             post.is_liked
-              ? "post-card-action post-card-action-liked"
-              : "post-card-action"
-          }
-          disabled={isAuthor || isAnyPostBusy}
-          aria-pressed={post.is_liked}
-          onClick={() => onLike(post.id)}
+            ? "post-card-action post-card-action-liked"
+            : "post-card-action"
+        }
+        disabled={isAuthor || isAnyPostBusy}
+        aria-pressed={post.is_liked}
+        aria-label={
+            post.is_liked
+            ? `Unlike post by ${post.author}`
+            : `Like post by ${post.author}`
+        }
+        onClick={() => onLike(post.id)}
         >
-          <span aria-hidden="true">
+        <span aria-hidden="true">
             {post.is_liked ? "♥" : "♡"}
-          </span>
-          {post.is_liked ? "Liked" : "Like"} ({post.likes_count})
-        </button>
+        </span>
+
+        {isLiking
+          ? "Updating..."
+          : post.is_liked
+            ? "Liked"
+            : "Like"}
+      </button>
+
 
         <button
           type="button"

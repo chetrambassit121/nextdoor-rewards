@@ -1,4 +1,3 @@
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fireEvent,
@@ -82,22 +81,35 @@ describe("Community Feed", () => {
 
     renderCommunity();
 
-    const textarea = screen.getByPlaceholderText(
-      "What's happening in your neighborhood?"
-    );
+    // Wait for the initial posts request to finish.
+    await screen.findByText("Hello neighbors!");
+
+    const textarea = screen.getByRole("textbox", {
+      name: /your community update/i,
+    });
 
     fireEvent.change(textarea, {
       target: { value: "My new post" },
     });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Create Post" })
-    );
+    const publishButton = screen.getByRole("button", {
+      name: /publish post/i,
+    });
+
+    expect(publishButton).toBeEnabled();
+
+    fireEvent.click(publishButton);
 
     await waitFor(() => {
       expect(communityApi.createPost).toHaveBeenCalledWith(
         "My new post"
       );
+    });
+
+    // Wait until the asynchronous submission finishes.
+    await waitFor(() => {
+      expect(publishButton).toBeDisabled();
+      expect(textarea).toHaveValue("");
     });
   });
 
@@ -106,9 +118,13 @@ describe("Community Feed", () => {
 
     renderCommunity();
 
-    const likeButton = await screen.findByRole(
-      "button",
-      { name: /like \(0\)/i }
+    const likeButton = await screen.findByRole("button", {
+      name: /like post by neighbor123/i,
+    });
+
+    expect(likeButton).toHaveAttribute(
+      "aria-pressed",
+      "false"
     );
 
     fireEvent.click(likeButton);
@@ -131,9 +147,13 @@ describe("Community Feed", () => {
 
     renderCommunity();
 
-    const unlikeButton = await screen.findByRole(
-      "button",
-      { name: /liked \(1\)/i }
+    const unlikeButton = await screen.findByRole("button", {
+      name: /unlike post by neighbor123/i,
+    });
+
+    expect(unlikeButton).toHaveAttribute(
+      "aria-pressed",
+      "true"
     );
 
     fireEvent.click(unlikeButton);
@@ -156,16 +176,24 @@ describe("Community Feed", () => {
 
     renderCommunity();
 
-    const commentsButton = await screen.findByRole(
-      "button",
-      { name: /comments \(0\)/i }
-    );
+    const commentsButton = await screen.findByRole("button", {
+      name: /comments \(0\)/i,
+    });
 
     fireEvent.click(commentsButton);
 
     expect(
       await screen.findByText("Great post!")
     ).toBeInTheDocument();
+
+    expect(
+      communityApi.getComments
+    ).toHaveBeenCalledWith(1);
+
+    expect(commentsButton).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
   });
 
   it("creates a comment", async () => {
@@ -179,31 +207,38 @@ describe("Community Feed", () => {
 
     renderCommunity();
 
-    fireEvent.click(
-      await screen.findByRole(
-        "button",
-        { name: /comments \(0\)/i }
-      )
-    );
+    const commentsButton = await screen.findByRole("button", {
+      name: /comments \(0\)/i,
+    });
 
-    const commentInput = await screen.findByPlaceholderText(
-      "Write a comment..."
-    );
+    fireEvent.click(commentsButton);
+
+    // Wait until the comments section is visible.
+    const commentInput = await screen.findByRole("textbox", {
+      name: /add a comment/i,
+    });
 
     fireEvent.change(commentInput, {
       target: { value: "Nice post!" },
     });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Comment" })
-    );
+    const submitButton = screen.getByRole("button", {
+      name: /post comment/i,
+    });
+
+    expect(submitButton).toBeEnabled();
+
+    fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(communityApi.createComment).toHaveBeenCalledWith(
-        1,
-        "Nice post!"
-      );
+      expect(
+        communityApi.createComment
+      ).toHaveBeenCalledWith(1, "Nice post!");
     });
+
+    expect(
+      await screen.findByText("Nice post!")
+    ).toBeInTheDocument();
   });
 
   it("prevents liking your own post", async () => {
@@ -216,12 +251,17 @@ describe("Community Feed", () => {
 
     renderCommunity();
 
-    const likeButton = await screen.findByRole(
-      "button",
-      { name: /like \(0\)/i }
-    );
+    const likeButton = await screen.findByRole("button", {
+      name: /like post by testuser/i,
+    });
 
     expect(likeButton).toBeDisabled();
+
+    fireEvent.click(likeButton);
+
+    expect(
+      communityApi.likePost
+    ).not.toHaveBeenCalled();
   });
 
   it("displays an error when loading fails", async () => {
@@ -237,4 +277,68 @@ describe("Community Feed", () => {
       "Something went wrong. Please try again."
     );
   });
+
+
+  it("shows an empty feed message", async () => {
+    vi.mocked(communityApi.getPosts).mockResolvedValue([]);
+
+    renderCommunity();
+
+    expect(
+      await screen.findByText(
+        /no posts yet/i
+      )
+    ).toBeInTheDocument();
+  });
+
+
+  
+it("preserves a successful comment when feed refresh fails", async () => {
+  vi.mocked(communityApi.getPosts)
+    .mockResolvedValueOnce([{ ...mockPost }])
+    .mockRejectedValueOnce(new Error("Refresh failed"));
+
+  vi.mocked(communityApi.createComment).mockResolvedValue({
+    id: 22,
+    post: 1,
+    user: "testuser",
+    content: "Thanks for sharing!",
+    created_at: "2026-11-20T12:00:00Z",
+  });
+
+  renderCommunity();
+
+  const commentsButton = await screen.findByRole("button", {
+    name: /comments \(0\)/i,
+  });
+
+  fireEvent.click(commentsButton);
+
+  const input = await screen.findByRole("textbox", {
+    name: /add a comment/i,
+  });
+
+  fireEvent.change(input, {
+    target: { value: "Thanks for sharing!" },
+  });
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /post comment/i,
+    })
+  );
+
+  expect(
+    await screen.findByText("Thanks for sharing!")
+  ).toBeInTheDocument();
+
+  expect(
+    await screen.findByRole("alert")
+  ).toHaveTextContent(
+    /comment was posted/i
+  );
+
+  expect(input).toHaveValue("");
+});
+
 });

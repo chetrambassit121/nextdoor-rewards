@@ -149,3 +149,25 @@
     font-size: 12px;
   }
 }
+
+
+
+.post-card-action-liked {
+  background: #fff1f2 !important;
+  color: #be123c !important;
+}
+
+.post-card-action-liked:hover:not(:disabled) {
+  background: #ffe4e6 !important;
+}
+
+.post-card-action:focus-visible {
+  outline: 3px solid rgba(22, 163, 74, 0.3);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-card-action {
+    transition: none;
+  }
+}
