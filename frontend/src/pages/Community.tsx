@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/community/PostCard";
 
+import CreatePostCard from "../components/community/CreatePostCard";
+
 import {
   getPosts,
   createPost,
@@ -64,6 +66,7 @@ export default function Community() {
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState("");
   const [busyPostId, setBusyPostId] = useState<number | null>(null);
+  const [postSuccess, setPostSuccess] = useState("");
 
   const [comments, setComments] = useState<
     Record<number, CommunityComment[]>
@@ -116,21 +119,36 @@ export default function Community() {
 
     const trimmed = content.trim();
 
-    if (!trimmed || posting) return;
+    if (!trimmed || trimmed.length > 2000 || posting) {
+      return;
+    }
 
     setPosting(true);
     setError("");
+    setPostSuccess("");
 
     try {
       await createPost(trimmed);
+
+      // The post was successfully saved in Django.
       setContent("");
-      await refreshPosts();
+      setPostSuccess("Your post was published successfully!");
+
+      // Refresh the feed to display the latest posts.
+      try {
+        await refreshPosts();
+      } catch {
+        setError(
+          "Your post was published, but the feed could not refresh."
+        );
+      }
     } catch (err) {
       setError(errorMessage(err));
     } finally {
       setPosting(false);
     }
   }
+
 
   // Delete a post owned by the authenticated user.
   async function handleDeletePost(postId: number) {
@@ -285,33 +303,26 @@ export default function Community() {
       )}
 
       {/* Create post form */}
-      <section
-        className="community-create"
-        aria-label="Create Post"
-      >
-        <h2>Share with your neighbors</h2>
+      <CreatePostCard
+        username={user?.username ?? "Neighbor"}
+        content={content}
+        posting={posting}
+        onContentChange={(value) => {
+          setContent(value);
 
-        <form onSubmit={(event) => void handleCreatePost(event)}>
-          <textarea
-            placeholder="What's happening in your neighborhood?"
-            value={content}
-            onChange={(event) =>
-              setContent(event.target.value)
-            }
-            rows={3}
-            maxLength={2000}
-            required
-            disabled={posting}
-          />
+          if (postSuccess) {
+            setPostSuccess("");
+          }
+        }}
+        onSubmit={handleCreatePost}
+      />
 
-          <button
-            type="submit"
-            disabled={posting || !content.trim()}
-          >
-            {posting ? "Posting..." : "Create Post"}
-          </button>
-        </form>
-      </section>
+      {postSuccess && (
+        <p className="community-success" role="status">
+          {postSuccess}
+        </p>
+      )}
+
 
       {/* Community feed */}
       <section className="community-feed">
