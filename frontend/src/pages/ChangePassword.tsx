@@ -197,68 +197,79 @@ async function handleSubmit(e: FormEvent<HTMLFormElement>) {
 
   return (
     <main className="change-password-page">
-      <div className="change-password-card">
-        <h1>Change Password</h1>
+      <div className="change-password-intro">
+        <Link className="change-password-back" to="/profile">← Back to Profile</Link>
+        <p className="change-password-eyebrow">Account Settings</p>
+        <h1>Account Security</h1>
+        <p>Manage your password and keep your account protected.</p>
+      </div>
 
-        <p>Update your account password securely.</p>
-
-        <form onSubmit={handleSubmit} noValidate>
-          {fields.map(({ name, label, autoComplete }) => (
-            <div className="password-field" key={name}>
-              <label htmlFor={name}>{label}</label>
-
-              <div className="password-input-wrapper">
-                <input
-                  id={name}
-                  name={name}
-                  type={showPasswords[name] ? "text" : "password"}
-                  autoComplete={autoComplete}
-                  value={form[name]}
-                  onChange={(e) =>
-                    handleChange(name, e.target.value)
-                  }
-                  aria-invalid={Boolean(errors[name])}
-                  aria-describedby={
-                    errors[name] ? `${name}-error` : undefined
-                  }
-                  disabled={loading}
-                />
-
-                <button
-                  type="button"
-                  className="toggle-password"
-                  onClick={() => togglePassword(name)}
-                  aria-label={
-                    showPasswords[name]
-                      ? `Hide ${label}`
-                      : `Show ${label}`
-                  }
-                >
-                  {showPasswords[name] ? "Hide" : "Show"}
-                </button>
-              </div>
-
-              {errors[name] && (
-                <p
-                  className="field-error"
-                  id={`${name}-error`}
-                  role="alert"
-                >
-                  {errors[name]}
-                </p>
-              )}
+      <div className="change-password-layout">
+        <section className="change-password-card" aria-labelledby="change-password-heading">
+          <header className="change-password-card-header">
+            <span className="change-password-icon" aria-hidden="true">🔒</span>
+            <div>
+              <h2 id="change-password-heading">Change Password</h2>
+              <p>Choose a strong password for your account.</p>
             </div>
-          ))}
+          </header>
 
-          {error && <p role="alert">{error}</p>}
-          {success && <p role="status">{success}</p>}
+          <form onSubmit={handleSubmit} noValidate>
+            {fields.map(({ name, label, autoComplete }) => (
+              <div className="password-field" key={name}>
+                <label htmlFor={name}>{label}</label>
+                <div className="password-input-wrapper">
+                  <input
+                    id={name}
+                    name={name}
+                    type={showPasswords[name] ? "text" : "password"}
+                    autoComplete={autoComplete}
+                    value={form[name]}
+                    onChange={(e) => handleChange(name, e.target.value)}
+                    aria-invalid={Boolean(errors[name])}
+                    aria-describedby={errors[name] ? `${name}-error` : undefined}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className="toggle-password"
+                    onClick={() => togglePassword(name)}
+                    aria-label={showPasswords[name] ? `Hide ${label}` : `Show ${label}`}
+                  >
+                    {showPasswords[name] ? "Hide" : "Show"}
+                  </button>
+                </div>
+                {errors[name] && (
+                  <p className="field-error" id={`${name}-error`} role="alert">
+                    {errors[name]}
+                  </p>
+                )}
+              </div>
+            ))}
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Updating..." : "Update Password"}
-          </button>
-        </form>
+            {error && <p className="change-password-alert change-password-alert-error" role="alert">{error}</p>}
+            {success && <p className="change-password-alert change-password-alert-success" role="status">{success}</p>}
 
-        <Link to="/profile">Back to Profile</Link>
+            <div className="change-password-actions">
+              <Link className="change-password-cancel" to="/profile">Cancel</Link>
+              <button className="change-password-submit" type="submit" disabled={loading}>
+                {loading ? "Updating..." : "Update Password"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <aside className="change-password-security" aria-label="Password security tips">
+          <span className="change-password-security-icon" aria-hidden="true">🛡️</span>
+          <h2>Keep your account secure</h2>
+          <p>A unique password helps protect your Nextdoor Rewards account.</p>
+          <ul>
+            <li>Use at least 8 characters.</li>
+            <li>Avoid passwords you use elsewhere.</li>
+            <li>Never share your password.</li>
+          </ul>
+          <p className="change-password-security-note">After updating your password, you’ll need to sign in again.</p>
+        </aside>
       </div>
     </main>
   );
