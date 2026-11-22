@@ -321,3 +321,37 @@ describe("5.9.8.2 password visibility", () => {
     expect(current.type).toBe("password");
   });
 });
+
+
+describe("5.9.8.3 password guidance", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockUseAuth.mockReturnValue({ user: null, loading: false, login: vi.fn(), logout: mockLogout });
+  });
+
+  it("updates strength guidance as the user types", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    const password = screen.getByLabelText("New Password", { exact: true });
+    expect(screen.getByText("Enter a password")).toBeInTheDocument();
+    await user.type(password, "abc");
+    expect(screen.getByText("Weak")).toBeInTheDocument();
+    await user.clear(password);
+    await user.type(password, "StrongPass123!");
+    expect(screen.getByText("Strong")).toBeInTheDocument();
+    expect(screen.getByText("Symbol").closest("li")).toHaveClass("requirement-met");
+  });
+
+  it("shows live confirmation feedback without sending a request", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await user.type(screen.getByLabelText("New Password", { exact: true }), "StrongPass123!");
+    const confirm = screen.getByLabelText("Confirm New Password");
+    await user.type(confirm, "Different123!");
+    expect(screen.getByText("Passwords do not match yet.")).toBeInTheDocument();
+    await user.clear(confirm);
+    await user.type(confirm, "StrongPass123!");
+    expect(screen.getByText("Passwords match.")).toBeInTheDocument();
+    expect(mockChangePassword).not.toHaveBeenCalled();
+  });
+});

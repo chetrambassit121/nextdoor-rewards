@@ -15,6 +15,20 @@ type PasswordField =
 type PasswordForm = Record<PasswordField, string>;
 type FormErrors = Partial<Record<PasswordField, string>>;
 
+const passwordChecks = [
+  { label: "At least 8 characters", test: (value: string) => value.length >= 8 },
+  { label: "Uppercase letter", test: (value: string) => /[A-Z]/.test(value) },
+  { label: "Lowercase letter", test: (value: string) => /[a-z]/.test(value) },
+  { label: "Number", test: (value: string) => /[0-9]/.test(value) },
+  { label: "Symbol", test: (value: string) => /[^A-Za-z0-9]/.test(value) },
+];
+
+function passwordStrength(value: string) {
+  if (!value) return { score: 0, label: "Enter a password" };
+  const score = passwordChecks.filter((check) => check.test(value)).length;
+  return { score, label: score <= 2 ? "Weak" : score <= 4 ? "Moderate" : "Strong" };
+}
+
 const initialForm: PasswordForm = {
   current_password: "",
   new_password: "",
@@ -174,6 +188,10 @@ async function handleSubmit(e: FormEvent<HTMLFormElement>) {
 }
 
 
+  const strength = passwordStrength(form.new_password);
+  const passwordsMatch = Boolean(form.confirm_password) && form.confirm_password === form.new_password;
+  const passwordsDiffer = Boolean(form.confirm_password) && form.confirm_password !== form.new_password;
+
   const fields: {
     name: PasswordField;
     label: string;
@@ -228,7 +246,11 @@ async function handleSubmit(e: FormEvent<HTMLFormElement>) {
                     value={form[name]}
                     onChange={(e) => handleChange(name, e.target.value)}
                     aria-invalid={Boolean(errors[name])}
-                    aria-describedby={errors[name] ? `${name}-error` : undefined}
+                    aria-describedby={[
+                      name === "new_password" ? "new-password-guidance" : null,
+                      name === "confirm_password" ? "confirm-password-guidance" : null,
+                      errors[name] ? `${name}-error` : null,
+                    ].filter(Boolean).join(" ") || undefined}
                     disabled={loading}
                     onKeyDown={(e) => setCapsLockOn(e.getModifierState("CapsLock") ? name : null)}
                     onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock") ? name : null)}
@@ -248,6 +270,36 @@ async function handleSubmit(e: FormEvent<HTMLFormElement>) {
                     <span>{showPasswords[name] ? "Hide" : "Show"}</span>
                   </button>
                 </div>
+                {name === "new_password" && (
+                  <div className="password-strength" id="new-password-guidance">
+                    <div className="password-strength-heading">
+                      <span>Password strength</span>
+                      <span className={`password-strength-label strength-${strength.score}`}>
+                        {strength.label}
+                      </span>
+                    </div>
+                    <div className="password-strength-meter" aria-hidden="true">
+                      {passwordChecks.map((check, index) => (
+                        <span key={check.label} className={index < strength.score ? `filled strength-${strength.score}` : ""} />
+                      ))}
+                    </div>
+                    <p className="password-guidance">For a stronger password, try:</p>
+                    <ul className="password-requirements">
+                      {passwordChecks.map((check) => {
+                        const met = check.test(form.new_password);
+                        return <li key={check.label} className={met ? "requirement-met" : ""}>
+                          <span aria-hidden="true">{met ? "✓" : "○"}</span> {check.label}
+                        </li>;
+                      })}
+                    </ul>
+                    <p className="password-guidance">Strength suggestions are guidance; the server makes the final decision.</p>
+                  </div>
+                )}
+                {name === "confirm_password" && form.confirm_password && (
+                  <p id="confirm-password-guidance" className={`password-match-feedback ${passwordsMatch ? "match" : "mismatch"}`}>
+                    {passwordsMatch ? "Passwords match." : passwordsDiffer ? "Passwords do not match yet." : ""}
+                  </p>
+                )}
                 {capsLockOn === name && (
                   <p className="password-caps-warning" role="status">Caps Lock is on.</p>
                 )}
