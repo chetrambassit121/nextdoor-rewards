@@ -274,7 +274,7 @@ export default function Profile() {
         <section className="profile-card profile-security" aria-labelledby="security-title">
           <div className="profile-card-header">
             <h2 id="security-title">Account Security</h2>
-            <p>Keep your Nextdoor Rewards account protected.</p>
+            <p>Keep your Neighborhood Rewards account protected.</p>
           </div>
           <div className="profile-security-content">
             <div className="profile-security-icon" aria-hidden="true">🔒</div>

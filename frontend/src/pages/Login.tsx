@@ -214,7 +214,7 @@ export default function Login() {
       </form>
 
       <p className="auth-form__switch">
-        New to Nextdoor Rewards?{" "}
+        New to Neighborhood Rewards?{" "}
         <Link to="/register">
           Create an account
         </Link>

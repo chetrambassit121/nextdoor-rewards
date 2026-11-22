@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { CommunityPost } from "../../services/community";
 import "./PostCard.css";
 
@@ -67,7 +68,23 @@ export default function PostCard({
           </div>
 
           <div className="post-card-author-info">
-            <strong>@{post.author}</strong>
+            {post.author_id != null ? (
+              <Link
+                to={`/users/${post.author_id}`}
+                className="post-card__author-link"
+                title={`View ${post.author}'s profile`}
+              >
+                @{post.author}
+                <span
+                  className="post-card__author-arrow"
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+              </Link>
+            ) : (
+              <strong>@{post.author}</strong>
+            )}
 
             <time
               dateTime={post.created_at}

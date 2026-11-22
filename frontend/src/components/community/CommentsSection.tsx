@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { FormEvent } from "react";
 import type { CommunityComment } from "../../services/community";
 import "./CommentsSection.css";
@@ -62,7 +63,13 @@ export default function CommentsSection({
 
               <div className="comment-bubble">
                 <div className="comment-meta">
-                  <strong>@{comment.user}</strong>
+                  {comment.user_id != null ? (
+                    <Link className="comment-user-link" to={`/users/${comment.user_id}`}>
+                      @{comment.user}
+                    </Link>
+                  ) : (
+                    <strong>@{comment.user}</strong>
+                  )}
 
                   <time dateTime={comment.created_at}>
                     {formatDate(comment.created_at)}

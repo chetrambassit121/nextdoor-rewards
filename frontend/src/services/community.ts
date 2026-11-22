@@ -4,6 +4,7 @@ import { api } from "./api";
 export interface CommunityPost {
   id: number;
   author: string;
+  author_id?: number;
   content: string;
   comments_count: number;
   likes_count: number;
@@ -15,6 +16,7 @@ export interface CommunityPost {
 export interface CommunityComment {
   id: number;
   user: string;
+  user_id?: number;
   post: number;
   content: string;
   created_at: string;

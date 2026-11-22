@@ -167,3 +167,13 @@
     flex-wrap: wrap;
   }
 }
+
+.comment-user-link {
+  color: #172b4d;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.comment-user-link:hover { text-decoration: underline; }
+.comment-user-link:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; border-radius: 2px; }

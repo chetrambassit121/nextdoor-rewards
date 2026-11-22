@@ -302,7 +302,7 @@ export default function ChangePassword() {
         <aside className="change-password-security" aria-label="Password security tips">
           <span className="change-password-security-icon" aria-hidden="true">🛡️</span>
           <h2>Keep your account secure</h2>
-          <p>A unique password helps protect your Nextdoor Rewards account.</p>
+          <p>A unique password helps protect your Neighborhood Rewards account.</p>
           <ul>
             <li>Use at least 8 characters.</li>
             <li>Avoid passwords you use elsewhere.</li>

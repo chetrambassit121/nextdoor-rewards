@@ -68,7 +68,7 @@ export default function Navbar() {
             N
           </span>
           <span>
-            Nextdoor <strong>Rewards</strong>
+            Neighborhood <strong>Rewards</strong>
           </span>
         </Link>
 

@@ -1,0 +1,9 @@
+/* Public profile additions; shared rewards components use RewardsDashboard.css */
+.public-profile .public-back { display: inline-block; margin-bottom: 16px; color: #16845d; text-decoration: none; font-weight: 600; }
+.public-profile .public-back:hover { text-decoration: underline; }
+.public-readonly { color: #64748b; font-size: 13px; border: 1px solid #e5e9ee; padding: 8px 12px; border-radius: 999px; }
+.public-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+.public-stat { background: #fff; border: 1px solid #e5e9ee; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.public-stat span { color: #64748b; font-size: 14px; }
+.public-stat strong { font-size: 28px; color: #183b31; }
+@media (max-width: 600px) { .public-profile .rewards-header { align-items: flex-start; } .public-readonly { display: none; } .public-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

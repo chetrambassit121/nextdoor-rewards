@@ -57,7 +57,7 @@ def other_client(other_user):
 def post(user):
     return Post.objects.create(
         author=user,
-        content="Hello Nextdoor community!",
+        content="Hello Neighborhood community!",
     )
 
 

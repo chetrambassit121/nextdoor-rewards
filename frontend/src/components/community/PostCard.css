@@ -171,3 +171,52 @@
     transition: none;
   }
 }
+
+.post-card-user-link {
+  color: #172b4d;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.post-card-user-link:hover { text-decoration: underline; }
+.post-card-user-link:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; border-radius: 2px; }
+
+
+/* Clickable profile username */
+.post-card__author-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  color: #0d9488;
+  font-weight: 700;
+  text-decoration: none;
+
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.post-card__author-link:hover {
+  color: #0f766e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.post-card__author-link:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* Small arrow indicating navigation */
+.post-card__author-arrow {
+  font-size: 12px;
+  opacity: 0.65;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.post-card__author-link:hover .post-card__author-arrow {
+  transform: translate(2px, -2px);
+  opacity: 1;
+}

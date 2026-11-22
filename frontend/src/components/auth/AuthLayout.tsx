@@ -21,7 +21,7 @@ export default function AuthLayout({
             <span className="auth-layout__brand-icon">
               N
             </span>
-            <span>Nextdoor Rewards</span>
+            <span>Neighborhood Rewards</span>
           </Link>
 
           <div className="auth-layout__header">
@@ -34,7 +34,7 @@ export default function AuthLayout({
           </div>
 
           <footer className="auth-layout__footer">
-            © {new Date().getFullYear()} Nextdoor Rewards
+            © {new Date().getFullYear()} Neighborhood Rewards
           </footer>
         </div>
       </section>

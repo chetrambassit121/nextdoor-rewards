@@ -10,6 +10,7 @@ import RewardsDashboard from "./pages/RewardsDashboard";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
+import PublicUserProfile from "./pages/PublicUserProfile";
 
 export default function App() {
   return (
@@ -26,9 +27,14 @@ export default function App() {
           <Route path="/rewards" element={<RewardsDashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route
+            path="/users/:userId"
+            element={<PublicUserProfile />}
+          />
+          <Route
             path="/change-password"
             element={<ChangePassword />}
           />
+
         </Route>
       </Route>
 
