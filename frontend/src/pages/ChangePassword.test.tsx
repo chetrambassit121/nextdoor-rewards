@@ -354,4 +354,104 @@ describe("5.9.8.3 password guidance", () => {
     expect(screen.getByText("Passwords match.")).toBeInTheDocument();
     expect(mockChangePassword).not.toHaveBeenCalled();
   });
+  it("disables submission and shows progress while updating", async () => {
+    const user = userEvent.setup();
+    let finish!: (value: { message: string }) => void;
+    mockChangePassword.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    renderForm();
+    await fillForm(user);
+    await submitForm(user);
+    expect(screen.getByRole("button", { name: "Updating..." })).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Updating your password securely");
+    expect(screen.getByText("Cancel")).toHaveAttribute("aria-disabled", "true");
+    expect(mockChangePassword).toHaveBeenCalledTimes(1);
+    finish({ message: "Updated" });
+    await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1));
+  });
+
+  it("displays a general backend validation error", async () => {
+    const user = userEvent.setup();
+    mockChangePassword.mockRejectedValue(new axios.AxiosError("Bad Request", "ERR_BAD_REQUEST", undefined, undefined, {
+      data: { non_field_errors: ["Please choose a different password."] },
+      status: 400, statusText: "Bad Request", headers: {}, config: { headers: new axios.AxiosHeaders() },
+    }));
+    renderForm();
+    await fillForm(user);
+    await submitForm(user);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Please choose a different password.");
+    expect(screen.getByLabelText("Current Password")).toHaveValue(validPayload.current_password);
+    expect(mockLogout).not.toHaveBeenCalled();
+  });
+
+});
+
+
+describe("5.9.8.5 final regression coverage", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockUseAuth.mockReturnValue({ user: null, loading: false, login: vi.fn(), logout: mockLogout });
+  });
+
+  it("rejects reusing the current password before calling the API", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await fillForm(user, {
+      current_password: "SamePassword123!",
+      new_password: "SamePassword123!",
+      confirm_password: "SamePassword123!",
+    });
+    await submitForm(user);
+    expect(screen.getByText("New password must be different from current password.")).toBeInTheDocument();
+    expect(mockChangePassword).not.toHaveBeenCalled();
+  });
+
+  it("shows an expired session message without logging out on an unsuccessful request", async () => {
+    const user = userEvent.setup();
+    mockChangePassword.mockRejectedValue(new axios.AxiosError("Unauthorized", "ERR_BAD_RESPONSE", undefined, undefined, {
+      data: { detail: "Unauthorized" },
+      status: 401, statusText: "Unauthorized", headers: {},
+      config: { headers: new axios.AxiosHeaders() },
+    }));
+    renderForm();
+    await fillForm(user);
+    await submitForm(user);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your session has expired. Please log in again.");
+    expect(mockLogout).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("shows a connection error for an Axios network failure", async () => {
+    const user = userEvent.setup();
+    mockChangePassword.mockRejectedValue(new axios.AxiosError("Network Error", "ERR_NETWORK"));
+    renderForm();
+    await fillForm(user);
+    await submitForm(user);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Unable to connect to the server.");
+    expect(screen.getByLabelText("New Password", { exact: true })).toHaveValue(validPayload.new_password);
+  });
+
+  it("prevents duplicate submissions while an update is in progress", async () => {
+    const user = userEvent.setup();
+    let finish!: (value: { message: string }) => void;
+    mockChangePassword.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    renderForm();
+    await fillForm(user);
+    await submitForm(user);
+    expect(mockChangePassword).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Updating..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Show New Password" })).toBeDisabled();
+    finish({ message: "Password changed successfully." });
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledTimes(1));
+  });
+
+  it("provides profile navigation and accessible field error descriptions", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    expect(screen.getByRole("link", { name: /Back to Profile/i })).toHaveAttribute("href", "/profile");
+    await submitForm(user);
+    const current = screen.getByLabelText("Current Password");
+    expect(current).toHaveAttribute("aria-invalid", "true");
+    expect(current).toHaveAttribute("aria-describedby", "current_password-error");
+    expect(screen.getByText("Current password is required.")).toHaveAttribute("id", "current_password-error");
+  });
 });

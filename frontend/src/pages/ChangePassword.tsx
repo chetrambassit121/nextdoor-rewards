@@ -50,7 +50,6 @@ export default function ChangePassword() {
 
   const [capsLockOn, setCapsLockOn] = useState<PasswordField | null>(null);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
   function handleChange(field: PasswordField, value: string) {
@@ -65,7 +64,6 @@ export default function ChangePassword() {
     }));
 
     setError("");
-    setSuccess("");
   }
 
   function togglePassword(field: PasswordField) {
@@ -103,89 +101,66 @@ export default function ChangePassword() {
   }
 
 
-async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-  e.preventDefault();
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (loading) return;
 
-  if (loading) return;
+    setError("");
+    const validationErrors = validateForm();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
 
-  setError("");
-  setSuccess("");
-
-  const validationErrors = validateForm();
-  setErrors(validationErrors);
-
-  if (Object.keys(validationErrors).length > 0) {
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const response = await changePassword(form);
-
-    setForm({ ...initialForm });
-    setErrors({});
-    setSuccess(response.message);
-
-    // Clear locally stored JWTs and authentication state.
-    logout();
-
-    // User must log in again with their new password.
-    navigate("/login", {
-      replace: true,
-      state: {
-        message:
-          "Password changed successfully. Please log in again.",
-      },
-    });
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      const status = err.response?.status;
-      const data = err.response?.data;
-
-      if (status === 400 && data) {
-        const fields: PasswordField[] = [
-          "current_password",
-          "new_password",
-          "confirm_password",
-        ];
-
-        const serverErrors: FormErrors = {};
-
-        for (const field of fields) {
-          const messages = data[field];
-
-          if (Array.isArray(messages)) {
-            serverErrors[field] = messages.join(" ");
-          } else if (typeof messages === "string") {
-            serverErrors[field] = messages;
-          }
-        }
-
-        setErrors(serverErrors);
-
-        if (Object.keys(serverErrors).length === 0) {
-          setError(
-            data.non_field_errors?.join?.(" ") ||
-              "Unable to change password."
-          );
-        }
-      } else if (status === 401) {
-        setError(
-          "Your session has expired. Please log in again."
-        );
-      } else {
-        setError(
-          "Something went wrong. Please try again."
-        );
+    setLoading(true);
+    try {
+      await changePassword(form);
+      setForm({ ...initialForm });
+      setErrors({});
+      // A password change invalidates the existing session.
+      logout();
+      navigate("/login", {
+        replace: true,
+        state: { message: "Password changed successfully. Please log in again." },
+      });
+    } catch (err: unknown) {
+      if (!axios.isAxiosError(err)) {
+        setError("An unexpected error occurred. Please try again.");
+        return;
       }
-    } else {
-      setError("An unexpected error occurred.");
+
+      const status = err.response?.status;
+      const data: unknown = err.response?.data;
+      if (status === 400 && data && typeof data === "object") {
+        const payload = data as Record<string, unknown>;
+        const serverErrors: FormErrors = {};
+        const fields: PasswordField[] = ["current_password", "new_password", "confirm_password"];
+        const messageOf = (value: unknown): string | undefined => {
+          if (typeof value === "string") return value;
+          if (Array.isArray(value)) {
+            const messages = value.filter((item): item is string => typeof item === "string");
+            return messages.length ? messages.join(" ") : undefined;
+          }
+          return undefined;
+        };
+        for (const field of fields) {
+          const message = messageOf(payload[field]);
+          if (message) serverErrors[field] = message;
+        }
+        setErrors(serverErrors);
+        const generalMessage = messageOf(payload.non_field_errors) || messageOf(payload.detail);
+        if (generalMessage || Object.keys(serverErrors).length === 0) {
+          setError(generalMessage || "Unable to change password. Please check your details.");
+        }
+      } else if (status === 401 || status === 403) {
+        setError("Your session has expired. Please log in again.");
+      } else if (!err.response) {
+        setError("Unable to connect to the server. Check your connection and try again.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
   }
-}
 
 
   const strength = passwordStrength(form.new_password);
@@ -248,7 +223,7 @@ async function handleSubmit(e: FormEvent<HTMLFormElement>) {
                     aria-invalid={Boolean(errors[name])}
                     aria-describedby={[
                       name === "new_password" ? "new-password-guidance" : null,
-                      name === "confirm_password" ? "confirm-password-guidance" : null,
+                      name === "confirm_password" && form.confirm_password ? "confirm-password-guidance" : null,
                       errors[name] ? `${name}-error` : null,
                     ].filter(Boolean).join(" ") || undefined}
                     disabled={loading}
@@ -311,12 +286,13 @@ async function handleSubmit(e: FormEvent<HTMLFormElement>) {
               </div>
             ))}
 
-            {error && <p className="change-password-alert change-password-alert-error" role="alert">{error}</p>}
-            {success && <p className="change-password-alert change-password-alert-success" role="status">{success}</p>}
+            {error && <div className="change-password-alert change-password-alert-error" role="alert"><strong>Could not update password</strong><span>{error}</span></div>}
+            {loading && <p className="change-password-progress" role="status">Updating your password securely…</p>}
 
             <div className="change-password-actions">
-              <Link className="change-password-cancel" to="/profile">Cancel</Link>
+              <Link className={`change-password-cancel${loading ? " is-disabled" : ""}`} to="/profile" aria-disabled={loading} onClick={(event) => { if (loading) event.preventDefault(); }}>Cancel</Link>
               <button className="change-password-submit" type="submit" disabled={loading}>
+                {loading && <span className="change-password-spinner" aria-hidden="true" />}
                 {loading ? "Updating..." : "Update Password"}
               </button>
             </div>
