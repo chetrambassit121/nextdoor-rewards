@@ -298,3 +298,26 @@ describe("ChangePassword Component", () => {
     );
   });
 });
+
+
+describe("5.9.8.2 password visibility", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockUseAuth.mockReturnValue({ user: null, loading: false, login: vi.fn(), logout: mockLogout });
+  });
+
+  it("toggles each field independently without clearing entered values", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    const current = screen.getByLabelText("Current Password") as HTMLInputElement;
+    const next = screen.getByLabelText("New Password", { exact: true }) as HTMLInputElement;
+    await user.type(current, "Secret123!");
+    expect(current.type).toBe("password");
+    await user.click(screen.getByRole("button", { name: "Show Current Password" }));
+    expect(current.type).toBe("text");
+    expect(current.value).toBe("Secret123!");
+    expect(next.type).toBe("password");
+    await user.click(screen.getByRole("button", { name: "Hide Current Password" }));
+    expect(current.type).toBe("password");
+  });
+});

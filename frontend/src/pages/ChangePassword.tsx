@@ -34,6 +34,7 @@ export default function ChangePassword() {
     confirm_password: false,
   });
 
+  const [capsLockOn, setCapsLockOn] = useState<PasswordField | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -229,16 +230,27 @@ async function handleSubmit(e: FormEvent<HTMLFormElement>) {
                     aria-invalid={Boolean(errors[name])}
                     aria-describedby={errors[name] ? `${name}-error` : undefined}
                     disabled={loading}
+                    onKeyDown={(e) => setCapsLockOn(e.getModifierState("CapsLock") ? name : null)}
+                    onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock") ? name : null)}
+                    onBlur={() => setCapsLockOn(null)}
                   />
                   <button
                     type="button"
                     className="toggle-password"
                     onClick={() => togglePassword(name)}
+                    disabled={loading}
+                    aria-pressed={showPasswords[name]}
                     aria-label={showPasswords[name] ? `Hide ${label}` : `Show ${label}`}
                   >
-                    {showPasswords[name] ? "Hide" : "Show"}
+                    <span className="password-visibility-icon" aria-hidden="true">
+                      {showPasswords[name] ? "◉" : "◎"}
+                    </span>
+                    <span>{showPasswords[name] ? "Hide" : "Show"}</span>
                   </button>
                 </div>
+                {capsLockOn === name && (
+                  <p className="password-caps-warning" role="status">Caps Lock is on.</p>
+                )}
                 {errors[name] && (
                   <p className="field-error" id={`${name}-error`} role="alert">
                     {errors[name]}
