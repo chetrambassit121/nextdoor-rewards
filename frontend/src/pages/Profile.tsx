@@ -254,9 +254,9 @@ export default function Profile() {
               <input id="email" onBlur={() => handleBlur("email")} type="email" autoComplete="email" maxLength={254}
                 value={form.email} disabled={saving}
                 aria-invalid={Boolean(fieldError("email"))}
-                aria-describedby={fieldError("email") ? "emailError" : undefined}
+                aria-describedby={fieldError("email") ? "emailError" : "emailHint"}
                 onChange={(e) => handleChange("email", e.target.value)} />
-              {fieldError("email") ? <p className="profile-field-error" id="emailError">{fieldError("email")}</p> : <p className="profile-field-hint">Used for your account information.</p>}
+              {fieldError("email") ? <p className="profile-field-error" id="emailError">{fieldError("email")}</p> : <p className="profile-field-hint" id="emailHint">Used for your account information.</p>}
             </div>
             {hasChanges && <p className="profile-unsaved" role="status"><span aria-hidden="true">●</span> You have unsaved changes.</p>}
             <div className="profile-actions">

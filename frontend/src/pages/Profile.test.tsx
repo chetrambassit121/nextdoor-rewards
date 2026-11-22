@@ -1,4 +1,3 @@
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -64,7 +63,7 @@ describe("Profile Component", () => {
   it("displays user profile information", async () => {
     await loadProfile();
 
-    expect(screen.getByText("testuser")).toBeInTheDocument();
+    expect(screen.getByText("@testuser")).toBeInTheDocument();
 
     expect(
       screen.getByLabelText("First Name")
@@ -77,6 +76,50 @@ describe("Profile Component", () => {
     expect(
       screen.getByLabelText("Email *")
     ).toHaveValue("john@example.com");
+  });
+
+  it("renders redesigned header, avatar, and security link", async () => {
+    await loadProfile();
+    expect(screen.getByRole("region", { name: "Profile overview" })).toHaveTextContent("John Doe");
+    expect(screen.getByText("JD")).toBeInTheDocument();
+    expect(screen.getByText("Community member")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Personal Information" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Account Security" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Change Password" })).toHaveAttribute("href", "/change-password");
+  });
+
+  it("uses username for display name when names are blank", async () => {
+    mockGetProfile.mockResolvedValue({ ...profile, first_name: "", last_name: "" });
+    await loadProfile();
+    expect(screen.getByRole("region", { name: "Profile overview" })).toHaveTextContent("@testuser");
+    expect(screen.getByText("T")).toBeInTheDocument();
+  });
+
+  it("shows email validation feedback after leaving the field", async () => {
+    const user = userEvent.setup();
+    await loadProfile();
+    const email = screen.getByLabelText("Email *");
+    await user.clear(email);
+    await user.type(email, "not-an-email");
+    await user.tab();
+    expect(email).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Enter a valid email address.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save Changes" })).toBeDisabled();
+  });
+
+  it("prevents duplicate submission while saving", async () => {
+    const user = userEvent.setup();
+    let resolveSave!: (value: typeof profile) => void;
+    mockUpdateProfile.mockImplementation(() => new Promise((resolve) => { resolveSave = resolve; }));
+    await loadProfile();
+    await user.clear(screen.getByLabelText("First Name"));
+    await user.type(screen.getByLabelText("First Name"), "Jane");
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+    expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
+    expect(mockUpdateProfile).toHaveBeenCalledTimes(1);
+    resolveSave({ ...profile, first_name: "Jane" });
+    expect(await screen.findByText("Profile updated successfully!")).toBeInTheDocument();
   });
 
   it("displays an error when loading fails", async () => {

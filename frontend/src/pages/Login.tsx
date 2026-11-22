@@ -192,11 +192,12 @@ export default function Login() {
           </div>
         )}
 
-        <button
-          className="auth-form__submit"
+      <button
           type="submit"
+          className="auth-form__submit"
           disabled={isSubmitting}
           aria-busy={isSubmitting}
+          aria-label={isSubmitting ? "Signing in, please wait" : "Sign in"}
         >
           {isSubmitting ? (
             <span className="auth-form__loading">
@@ -204,7 +205,7 @@ export default function Login() {
                 className="auth-form__spinner"
                 aria-hidden="true"
               />
-              Signing in...
+              Signing in, please wait...
             </span>
           ) : (
             "Sign in"
