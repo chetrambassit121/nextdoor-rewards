@@ -1,0 +1,11 @@
+{
+  "name": "neighborhood-rewards-heroku",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "heroku-postbuild": "npm --prefix frontend ci --include=dev && npm --prefix frontend run build && python backend/manage.py collectstatic --noinput"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  }
+}

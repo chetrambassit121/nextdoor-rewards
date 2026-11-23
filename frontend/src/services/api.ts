@@ -4,10 +4,16 @@ import type {
   InternalAxiosRequestConfig,
 } from "axios";
 
+
+// this code is for development
 // const API_URL = "http://localhost:8000/api";
+// const API_URL =
+//   import.meta.env.VITE_API_URL ||
+//   "http://localhost:8000/api";
+
+// production
 const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:8000/api";
+  import.meta.env.VITE_API_URL || "/api";
 
 export const api = axios.create({
   baseURL: API_URL,

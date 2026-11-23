@@ -6,11 +6,32 @@
 //   plugins: [react()],
 // })
 
+// import { defineConfig } from "vitest/config";
+// import react from "@vitejs/plugin-react";
+
+// export default defineConfig({
+//   plugins: [react()],
+//   test: {
+//     environment: "jsdom",
+//     globals: true,
+//     setupFiles: ["./src/test/setup.ts"],
+//     css: true,
+//   },
+// });
+
+
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
+
 export default defineConfig({
   plugins: [react()],
+
+  build: {
+    outDir: "../backend/frontend_dist",
+    emptyOutDir: true,
+  },
+
   test: {
     environment: "jsdom",
     globals: true,

@@ -11,6 +11,9 @@ venv/
 staticfiles/
 media/
 
+backend/frontend_dist/
+backend/staticfiles/
+
 # React / Node
 node_modules/
 dist/

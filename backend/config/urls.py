@@ -16,13 +16,24 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+
+from config.views import ReactAppView
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+
     path("api/", include("core.urls")),
     path("api/auth/", include("accounts.urls")),
     path("api/community/", include("community.urls")),
     path("api/rewards/", include("rewards.urls")),
     path("api/users/", include("accounts.public_urls")),
+
+    # React SPA fallback
+    re_path(
+        r"^(?!api/|admin/|static/|assets/).*$",
+        ReactAppView.as_view(),
+        name="react-app",
+    ),
 ]
