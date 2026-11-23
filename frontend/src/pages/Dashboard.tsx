@@ -69,10 +69,10 @@ export default function Dashboard() {
 
       setData({
         profile,
-        transactions,
-        milestones,
-        achievements,
-        posts,
+        transactions: Array.isArray(transactions) ? transactions : [],
+        milestones: Array.isArray(milestones) ? milestones : [],
+        achievements: Array.isArray(achievements) ? achievements : [],
+        posts: Array.isArray(posts) ? posts : [],
       });
     } catch {
       setError(

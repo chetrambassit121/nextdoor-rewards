@@ -29,14 +29,32 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
+// export async function getPosts(): Promise<CommunityPost[]> {
+//   const response = await api.get<
+//     CommunityPost[] | PaginatedResponse<CommunityPost>
+//   >("/community/posts/");
+
+//   return Array.isArray(response.data)
+//     ? response.data
+//     : response.data.results;
+// }
 export async function getPosts(): Promise<CommunityPost[]> {
   const response = await api.get<
     CommunityPost[] | PaginatedResponse<CommunityPost>
   >("/community/posts/");
 
-  return Array.isArray(response.data)
-    ? response.data
-    : response.data.results;
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  console.error("Unexpected posts API response:", data);
+  throw new Error("Invalid community posts API response");
 }
 
 export async function createPost(
@@ -56,6 +74,17 @@ export async function deletePost(
   await api.delete(`/community/posts/${postId}/`);
 }
 
+// export async function getComments(
+//   postId: number
+// ): Promise<CommunityComment[]> {
+//   const response = await api.get<
+//     CommunityComment[] | PaginatedResponse<CommunityComment>
+//   >(`/community/posts/${postId}/comments/`);
+
+//   return Array.isArray(response.data)
+//     ? response.data
+//     : response.data.results;
+// }
 export async function getComments(
   postId: number
 ): Promise<CommunityComment[]> {
@@ -63,9 +92,18 @@ export async function getComments(
     CommunityComment[] | PaginatedResponse<CommunityComment>
   >(`/community/posts/${postId}/comments/`);
 
-  return Array.isArray(response.data)
-    ? response.data
-    : response.data.results;
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  console.error("Unexpected comments API response:", data);
+  throw new Error("Invalid community comments API response");
 }
 
 export async function createComment(
