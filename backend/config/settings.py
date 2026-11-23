@@ -37,7 +37,7 @@ ALLOWED_HOSTS = [
     ).split(",")
     if host.strip()
 ]
-]
+
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
