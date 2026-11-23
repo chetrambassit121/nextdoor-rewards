@@ -34,9 +34,9 @@ ALLOWED_HOSTS = [
     for host in os.environ.get(
         "DJANGO_ALLOWED_HOSTS",
         "localhost,127.0.0.1",
-        "neighborhood-rewards-demo-d3f65d8ee05d.herokuapp.com",
     ).split(",")
     if host.strip()
+]
 ]
 
 CSRF_TRUSTED_ORIGINS = [
