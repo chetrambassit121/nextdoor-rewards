@@ -1,3 +1,4 @@
+
 import { useState, type FormEvent } from "react";
 import {
   Link,
@@ -11,7 +12,7 @@ import AuthLayout from "../components/auth/AuthLayout";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
 
   const successMessage = (
     location.state as { message?: string } | null
@@ -22,7 +23,10 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGuestSubmitting, setIsGuestSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const isBusy = isSubmitting || isGuestSubmitting;
 
   const [fieldErrors, setFieldErrors] = useState({
     username: "",
@@ -48,10 +52,12 @@ export default function Login() {
     return !errors.username && !errors.password;
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    e: FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
-    if (isSubmitting) return;
+    if (isBusy) return;
 
     setError("");
 
@@ -71,6 +77,34 @@ export default function Login() {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Guest authentication
+  const handleGuestLogin = async () => {
+    if (isBusy) return;
+
+    setError("");
+
+    setFieldErrors({
+      username: "",
+      password: "",
+    });
+
+    setIsGuestSubmitting(true);
+
+    try {
+      await loginAsGuest();
+
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      console.error("Guest login failed:", err);
+
+      setError(
+        "Guest login is currently unavailable. Please try again."
+      );
+    } finally {
+      setIsGuestSubmitting(false);
     }
   };
 
@@ -103,7 +137,7 @@ export default function Login() {
             autoComplete="username"
             autoFocus
             value={username}
-            disabled={isSubmitting}
+            disabled={isBusy}
             aria-invalid={Boolean(fieldErrors.username)}
             aria-describedby={
               fieldErrors.username
@@ -144,7 +178,7 @@ export default function Login() {
               placeholder="Enter your password"
               autoComplete="current-password"
               value={password}
-              disabled={isSubmitting}
+              disabled={isBusy}
               aria-invalid={Boolean(fieldErrors.password)}
               aria-describedby={
                 fieldErrors.password
@@ -164,12 +198,16 @@ export default function Login() {
             <button
               type="button"
               className="auth-form__password-toggle"
-              onClick={() => setShowPassword((prev) => !prev)}
+              onClick={() =>
+                setShowPassword((prev) => !prev)
+              }
               aria-label={
-                showPassword ? "Hide password" : "Show password"
+                showPassword
+                  ? "Hide password"
+                  : "Show password"
               }
               aria-pressed={showPassword}
-              disabled={isSubmitting}
+              disabled={isBusy}
             >
               {showPassword ? "Hide" : "Show"}
             </button>
@@ -192,12 +230,17 @@ export default function Login() {
           </div>
         )}
 
-      <button
+        {/* Regular login */}
+        <button
           type="submit"
           className="auth-form__submit"
-          disabled={isSubmitting}
+          disabled={isBusy}
           aria-busy={isSubmitting}
-          aria-label={isSubmitting ? "Signing in, please wait" : "Sign in"}
+          aria-label={
+            isSubmitting
+              ? "Signing in, please wait"
+              : "Sign in"
+          }
         >
           {isSubmitting ? (
             <span className="auth-form__loading">
@@ -211,6 +254,64 @@ export default function Login() {
             "Sign in"
           )}
         </button>
+
+        {/* Guest login divider */}
+        <div className="auth-form__divider">
+          <span>or explore the demo</span>
+        </div>
+
+        {/* Guest login button */}
+        <button
+          type="button"
+          className="auth-form__guest"
+          onClick={handleGuestLogin}
+          disabled={isBusy}
+          aria-busy={isGuestSubmitting}
+          aria-label={
+            isGuestSubmitting
+              ? "Connecting as guest, please wait"
+              : "Continue as Guest"
+          }
+          aria-describedby="guest-description"
+        >
+          {isGuestSubmitting ? (
+            <span className="auth-form__loading">
+              <span
+                className="auth-form__spinner"
+                aria-hidden="true"
+              />
+              Connecting as guest...
+            </span>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+              </svg>
+
+              Continue as Guest
+            </>
+          )}
+        </button>
+
+        <p
+          id="guest-description"
+          className="auth-form__guest-description"
+        >
+          Explore the community, rewards, and profiles.
+          No account required.
+        </p>
       </form>
 
       <p className="auth-form__switch">
