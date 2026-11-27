@@ -655,3 +655,103 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+
+/* Guest login divider */
+
+.auth-form__divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0;
+
+  color: #64748b;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.auth-form__divider::before,
+.auth-form__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+/* Guest login button */
+
+.auth-form__guest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 18px;
+
+  background: #f0fdf4;
+  color: #166534;
+
+  border: 1px solid #16a34a;
+  border-radius: 10px;
+
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.auth-form__guest:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #15803d;
+  transform: translateY(-1px);
+}
+
+.auth-form__guest:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.auth-form__guest:focus-visible {
+  outline: 3px solid #86efac;
+  outline-offset: 3px;
+}
+
+.auth-form__guest:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.auth-form__guest .auth-form__spinner {
+  border-color: rgba(22, 101, 52, 0.2);
+  border-top-color: #166534;
+}
+
+/* Guest login description */
+
+.auth-form__guest-description {
+  margin: 0;
+  padding: 0 8px;
+
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .auth-form__guest {
+    font-size: 14px;
+  }
+
+  .auth-form__guest-description {
+    font-size: 12px;
+  }
+}
