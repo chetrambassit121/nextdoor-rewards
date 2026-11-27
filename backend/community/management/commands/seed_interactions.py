@@ -1,4 +1,5 @@
 import random
+import heapq
 import re
 from datetime import timedelta
 
@@ -197,6 +198,30 @@ class Command(BaseCommand):
             seconds=rng.randint(0, available_seconds)
         )
 
+    @staticmethod
+    def engagement_weights(posts):
+        """Stable popularity tiers: 15% popular, 35% active, 50% quiet.
+
+        Ranking by seeded post identity avoids shifting popularity when the
+        command is rerun with a larger target.
+        """
+        ranked = sorted(posts, key=lambda post: random.Random(post.pk * 7919).random())
+        total = len(ranked)
+        popular = max(1, round(total * 0.15))
+        active = round(total * 0.35)
+        return {
+            post.pk: (12.0 if index < popular else 3.0 if index < popular + active else 0.35)
+            for index, post in enumerate(ranked)
+        }
+
+    @staticmethod
+    def commenter_weights(users):
+        """Some neighbors participate more often than others."""
+        return {
+            user.pk: 0.5 + 4.5 * random.Random(user.pk * 3571).random() ** 2
+            for user in users
+        }
+
     def seed_comments(self, users, posts, count):
         rng = random.Random(126)
 
@@ -231,13 +256,18 @@ class Command(BaseCommand):
         }
 
         created_count = 0
+        popularity = self.engagement_weights(posts)
+        participation = self.commenter_weights(users)
+        post_weights = [popularity[post.pk] for post in posts]
 
         for index in range(1, count + 1):
-            post = rng.choice(posts)
-
-            user = rng.choice(
-                eligible_users[post.pk]
-            )
+            post = rng.choices(posts, weights=post_weights, k=1)[0]
+            eligible = eligible_users[post.pk]
+            user = rng.choices(
+                eligible,
+                weights=[participation[item.pk] for item in eligible],
+                k=1,
+            )[0]
 
             content = generate_comment_content(
                 index,
@@ -323,9 +353,20 @@ class Command(BaseCommand):
                 "of available unique user/post pairs."
             )
 
-        selected_pairs = rng.sample(
-            available_pairs,
+        # Weighted sampling *without replacement* keeps likes unique,
+        # while making popular posts and active neighbors more visible.
+        # A seeded random stream makes repeated runs reproducible.
+        popularity = self.engagement_weights(posts)
+        participation = self.commenter_weights(users)
+        selected_pairs = heapq.nlargest(
             remaining_count,
+            available_pairs,
+            key=lambda pair: (
+                rng.random() ** (
+                    1.0 / (
+                        popularity[pair[1]] * participation[pair[0]]
+                    ))
+            ),
         )
 
         created_count = 0

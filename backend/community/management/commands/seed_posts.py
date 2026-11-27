@@ -101,10 +101,21 @@ class Command(BaseCommand):
         rewards_count = 0
 
         # Give some fictional users higher activity levels.
-        user_weights = [
-            activity_rng.randint(1, 10)
-            for _ in demo_users
-        ]
+        user_weights = []
+
+        for user in demo_users:
+            activity_level = activity_rng.random()
+
+            if activity_level < 0.55:
+                weight = activity_rng.randint(1, 3)
+
+            elif activity_level < 0.85:
+                weight = activity_rng.randint(4, 7)
+
+            else:
+                weight = activity_rng.randint(8, 12)
+
+            user_weights.append(weight)
 
         # Load existing identifiers once instead of querying
         # the database separately for every generated post.
@@ -154,16 +165,22 @@ class Command(BaseCommand):
                 k=1,
             )[0]
 
-            seconds_ago = activity_rng.randint(
-                0,
-                days * 24 * 60 * 60,
-            )
-
-            created_at = max(
-                now - timedelta(seconds=seconds_ago),
+            earliest_date = max(
+                now - timedelta(days=days),
                 author.date_joined,
             )
 
+            available_seconds = max(
+                0,
+                int((now - earliest_date).total_seconds()),
+            )
+
+            created_at = now - timedelta(
+                seconds=activity_rng.randint(
+                    0,
+                    available_seconds,
+                )
+            )
             if index in existing_ids:
                 skipped_count += 1
                 continue

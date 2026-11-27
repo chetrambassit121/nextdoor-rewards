@@ -1,4 +1,3 @@
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -81,13 +80,16 @@ describe("ChangePassword Component", () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    mockUseAuth.mockReturnValue({
+  mockUseAuth.mockReturnValue({
       user: null,
       loading: false,
+      isGuest: false,
       login: vi.fn(),
+      loginAsGuest: vi.fn(),
       logout: mockLogout,
     });
   });
+  
 
   it("renders all password fields", () => {
     renderForm();
@@ -303,7 +305,14 @@ describe("ChangePassword Component", () => {
 describe("5.9.8.2 password visibility", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockUseAuth.mockReturnValue({ user: null, loading: false, login: vi.fn(), logout: mockLogout });
+    mockUseAuth.mockReturnValue({
+      user: null,
+      loading: false,
+      isGuest: false,
+      login: vi.fn(),
+      loginAsGuest: vi.fn(),
+      logout: mockLogout,
+    });
   });
 
   it("toggles each field independently without clearing entered values", async () => {
@@ -326,7 +335,14 @@ describe("5.9.8.2 password visibility", () => {
 describe("5.9.8.3 password guidance", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockUseAuth.mockReturnValue({ user: null, loading: false, login: vi.fn(), logout: mockLogout });
+    mockUseAuth.mockReturnValue({
+      user: null,
+      loading: false,
+      isGuest: false,
+      login: vi.fn(),
+      loginAsGuest: vi.fn(),
+      logout: mockLogout,
+    });
   });
 
   it("updates strength guidance as the user types", async () => {
@@ -389,7 +405,14 @@ describe("5.9.8.3 password guidance", () => {
 describe("5.9.8.5 final regression coverage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockUseAuth.mockReturnValue({ user: null, loading: false, login: vi.fn(), logout: mockLogout });
+    mockUseAuth.mockReturnValue({
+      user: null,
+      loading: false,
+      isGuest: false,
+      login: vi.fn(),
+      loginAsGuest: vi.fn(),
+      logout: mockLogout,
+    });
   });
 
   it("rejects reusing the current password before calling the API", async () => {

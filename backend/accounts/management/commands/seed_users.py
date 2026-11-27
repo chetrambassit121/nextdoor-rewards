@@ -6,6 +6,9 @@ from django.db import transaction
 
 from rewards.models import UserRewardProfile
 
+from datetime import timedelta
+from django.utils import timezone
+
 
 User = get_user_model()
 
@@ -84,6 +87,9 @@ class Command(BaseCommand):
             )
 
         rng = random.Random(42)
+        date_rng = random.Random(64)
+
+        now = timezone.now()
 
         created_count = 0
         skipped_count = 0
@@ -129,6 +135,15 @@ class Command(BaseCommand):
                 is_staff=False,
                 is_superuser=False,
             )
+
+            date_joined = now - timedelta(
+            days=date_rng.randint(180, 730),
+            seconds=date_rng.randint(0, 86400),
+        )
+
+            User.objects.filter(pk=user.pk).update(
+                date_joined=date_joined,
+)
 
             _, profile_created = (
                 UserRewardProfile.objects.get_or_create(

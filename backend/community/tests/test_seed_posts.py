@@ -292,3 +292,48 @@ class SeedPostsCommandTests(TestCase):
             self.get_demo_posts().count(),
             0,
         )
+
+
+    def test_posts_are_distributed_across_authors(self):
+        self.run_seed_command(count=100)
+
+        unique_authors = (
+            self.get_demo_posts()
+            .values("author_id")
+            .distinct()
+            .count()
+        )
+
+        self.assertGreaterEqual(unique_authors, 5)
+
+
+    def test_latest_posts_have_author_diversity(self):
+        self.run_seed_command(count=100)
+
+        latest_posts = (
+            self.get_demo_posts()
+            .order_by("-created_at", "-pk")[:10]
+        )
+
+        unique_authors = {
+            post.author_id
+            for post in latest_posts
+        }
+
+        self.assertGreaterEqual(
+            len(unique_authors),
+            3,
+        )
+
+
+    def test_generated_timestamps_are_varied(self):
+        self.run_seed_command(count=100)
+
+        timestamps = set(
+            self.get_demo_posts().values_list(
+                "created_at",
+                flat=True,
+            )
+        )
+
+        self.assertGreater(len(timestamps), 90)

@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from .guest import GUEST_USERNAME, GUEST_EMAIL
 
 User = get_user_model()
 
@@ -96,6 +97,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return email
 
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
@@ -107,12 +109,25 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "password"]
         read_only_fields = ["id"]
 
+    def validate_username(self, value):
+        if value.strip().casefold() == GUEST_USERNAME.casefold():
+            raise serializers.ValidationError(
+                "This username is reserved."
+            )
+
+        return value
+
     def validate_email(self, value):
         email = value.strip().lower()
 
         if not email:
             raise serializers.ValidationError(
                 "Email is required."
+            )
+
+        if email == GUEST_EMAIL.lower():
+            raise serializers.ValidationError(
+                "This email is reserved."
             )
 
         if User.objects.filter(email__iexact=email).exists():
@@ -125,16 +140,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         password = attrs.get("password")
 
-        from django.contrib.auth.password_validation import (
-            validate_password
-        )
-
         validate_password(password)
 
         return attrs
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
 
 
 

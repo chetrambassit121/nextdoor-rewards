@@ -5,10 +5,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-
-
 from .views import RegisterView, CurrentUserView, UserProfileView, ChangePasswordView
-
+from .guest_views import GuestLoginView
 
 urlpatterns = [
     path(
@@ -44,6 +42,11 @@ urlpatterns = [
         "change-password/",
         ChangePasswordView.as_view(),
         name="change-password"
+    ),
+    path(
+        "guest-login/",
+        GuestLoginView.as_view(),
+        name="guest-login",
     ),
 ]
 
