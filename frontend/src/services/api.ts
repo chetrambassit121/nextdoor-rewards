@@ -47,15 +47,19 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as RetryConfig | undefined;
 
-    if (
-      error.response?.status !== 401 ||
-      !original ||
-      original._retry ||
-      original.url?.includes("/auth/login/") ||
-      original.url?.includes("/auth/refresh/")
-    ) {
-      return Promise.reject(error);
-    }
+    
+  if (
+    error.response?.status !== 401 ||
+    !original ||
+    original._retry ||
+    original.url?.includes("/auth/login/") ||
+    original.url?.includes("/auth/guest-login/") ||
+    original.url?.includes("/auth/register/") ||
+    original.url?.includes("/auth/refresh/")
+  ) {
+    return Promise.reject(error);
+  }
+
 
     original._retry = true;
 
