@@ -16,12 +16,15 @@ from rewards.services import (
 
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
-
+from accounts.permissions import GuestReadOnly
 
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+        GuestReadOnly,
+    ]
     http_method_names = ["get", "post", "delete", "head", "options"]
 
     def get_queryset(self):
@@ -44,7 +47,10 @@ class PostViewSet(viewsets.ModelViewSet):
                 )
             )
 
-        return queryset.order_by("-created_at")
+        return queryset.order_by(
+            "-created_at",
+            "-pk",
+        )
 
     
     @transaction.atomic
@@ -108,7 +114,10 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["get", "post"],
-        permission_classes=[IsAuthenticatedOrReadOnly],
+        permission_classes=[
+            IsAuthenticatedOrReadOnly,
+            GuestReadOnly,
+        ],
     )
     def comments(self, request, pk=None):
         post = self.get_object()
@@ -155,7 +164,10 @@ class PostViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=["delete"],
         url_path=r"comments/(?P<comment_id>[0-9]+)",
-        permission_classes=[IsAuthenticated],
+        permission_classes=[
+            IsAuthenticated,
+            GuestReadOnly,
+        ],
     )
     def delete_comment(
         self, request, pk=None, comment_id=None
@@ -197,7 +209,10 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["post", "delete"],
-        permission_classes=[IsAuthenticated],
+        permission_classes=[
+            IsAuthenticated,
+            GuestReadOnly,
+        ],
     )
     def like(self, request, pk=None):
         post = self.get_object()

@@ -11,25 +11,35 @@ from rest_framework_simplejwt.token_blacklist.models import (
     BlacklistedToken,
 )
 
-# class UserProfileView(generics.RetrieveUpdateAPIView):
-#     serializer_class = UserProfileSerializer
-#     permission_classes = [permissions.IsAuthenticated]
+from .permissions import GuestReadOnly
+from .guest import GUEST_USERNAME
 
-#     def get_object(self):
-#         return self.request.user
+
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated]
-    http_method_names = ["get", "patch", "head", "options"]
+
+    permission_classes = [
+        IsAuthenticated,
+        GuestReadOnly,
+    ]
+
+    http_method_names = [
+        "get",
+        "patch",
+        "head",
+        "options",
+    ]
 
     def get_object(self):
         return self.request.user
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
+
 
 
 class CurrentUserView(APIView):
@@ -42,6 +52,10 @@ class CurrentUserView(APIView):
             "id": user.id,
             "username": user.username,
             "email": user.email,
+            "is_guest": (
+                user.username.casefold()
+                == GUEST_USERNAME.casefold()
+            ),
         })
 
 
@@ -58,7 +72,10 @@ class ChangePasswordView(APIView):
         save()	Hashes and saves the new password
         Response()	Returns a success message
     '''
-    permission_classes = [IsAuthenticated]
+    permission_classes = [
+        IsAuthenticated,
+        GuestReadOnly,
+    ]
 
     def post(self, request):
         serializer = ChangePasswordSerializer(
