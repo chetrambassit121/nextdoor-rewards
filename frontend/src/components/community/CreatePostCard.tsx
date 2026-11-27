@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import "./CreatePostCard.css";
+import { getInitials } from "../../utils/avatar";
 
 const MAX_POST_LENGTH = 2000;
 
@@ -25,7 +26,7 @@ export default function CreatePostCard({
   const isInvalid =
     !content.trim() || content.length > MAX_POST_LENGTH;
 
-  const initials = username.slice(0, 2).toUpperCase() || "U";
+  const initials = getInitials(username);
 
   return (
     <section

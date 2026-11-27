@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { CommunityPost } from "../../services/community";
 import "./PostCard.css";
+import { getInitials } from "../../utils/avatar";
 
 interface PostCardProps {
   post: CommunityPost;
@@ -15,9 +16,6 @@ interface PostCardProps {
   children?: React.ReactNode;
 }
 
-function getInitials(username: string): string {
-  return username.slice(0, 2).toUpperCase();
-}
 
 function formatPostDate(date: string): string {
   const timestamp = new Date(date).getTime();

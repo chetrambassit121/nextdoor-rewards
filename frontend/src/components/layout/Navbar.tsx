@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "./Navbar.css";
+import { getInitials } from "../../utils/avatar";
 
 const navigation = [
   { label: "Dashboard", path: "/dashboard" },
@@ -97,7 +98,7 @@ export default function Navbar() {
               onClick={() => setUserMenuOpen((open) => !open)}
             >
               <span className="navbar-avatar">
-                {user?.username?.charAt(0).toUpperCase() || "U"}
+                {getInitials(user?.username || "")}
               </span>
               <span className="navbar-username">
                 {user?.username}

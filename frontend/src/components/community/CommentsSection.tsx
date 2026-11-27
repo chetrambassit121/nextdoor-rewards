@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { FormEvent } from "react";
 import type { CommunityComment } from "../../services/community";
 import "./CommentsSection.css";
+import { getInitials } from "../../utils/avatar";
 
 interface CommentsSectionProps {
   postId: number;
@@ -58,7 +59,7 @@ export default function CommentsSection({
                 className="comment-avatar"
                 aria-hidden="true"
               >
-                {comment.user.slice(0, 2).toUpperCase()}
+                {getInitials(comment.user)}
               </div>
 
               <div className="comment-bubble">
