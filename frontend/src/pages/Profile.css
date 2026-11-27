@@ -58,3 +58,6 @@
 .profile-alert-error { background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
 .profile-alert-success { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
 @media (max-width: 540px) { .profile-name-row { grid-template-columns: 1fr; gap: 0; } .profile-actions button { flex: 1 1 auto; } }
+
+.profile-field input[readonly] { background: #f5f7f6; color: #64748b; cursor: default; }
+.profile-guest-notice { padding: 12px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; }

@@ -99,7 +99,7 @@ type BusyPost = {
 
 export default function Community() {
 
-const { user } = useAuth();
+const { user, isGuest } = useAuth();
 
 const [posts, setPosts] = useState<CommunityPost[]>([]);
 
@@ -193,6 +193,7 @@ const data = await getPosts();
 async function handleCreatePost(event: FormEvent) {
 
     event.preventDefault();
+    if (isGuest) return;
 
 const trimmed = content.trim();
 
@@ -224,7 +225,7 @@ const trimmed = content.trim();
       await refreshPosts();
     } catch {
       setError(
-        "Your comment was posted, but the feed counts could not refresh."
+        "Your post was published, but the feed could not refresh."
       );
     }
 
@@ -243,6 +244,7 @@ const trimmed = content.trim();
 // Delete a post owned by the authenticated user.
 
 async function handleDeletePost(postId: number) {
+    if (isGuest) return;
 
     if (busyPost !== null) return;
 
@@ -334,6 +336,7 @@ async function handleCreateComment(
   postId: number
 ) {
   event.preventDefault();
+    if (isGuest) return;
 
   const text = (commentInputs[postId] || "").trim();
 
@@ -379,6 +382,7 @@ async function handleCreateComment(
 // Like or unlike a post.
 
 async function handleLike(postId: number) {
+    if (isGuest) return;
 
     if (busyPost !== null) return;
 
@@ -474,29 +478,23 @@ const post = posts.find((item) => item.id === postId);
 
       {/* Create post form */}
 
-      <CreatePostCard
+     
+      {!isGuest && (
+        <CreatePostCard
+          username={user?.username ?? "Neighbor"}
+          content={content}
+          posting={posting}
+          onContentChange={(value) => {
+            setContent(value);
 
-        username={user?.username ?? "Neighbor"}
+            if (postSuccess) {
+              setPostSuccess("");
+            }
+          }}
+          onSubmit={handleCreatePost}
+        />
+      )}
 
-        content={content}
-
-        posting={posting}
-
-        onContentChange={(value) => {
-
-          setContent(value);
-
-          if (postSuccess) {
-
-            setPostSuccess("");
-
-          }
-
-        }}
-
-        onSubmit={handleCreatePost}
-
-      />
 
       {postSuccess && (
 
@@ -522,7 +520,7 @@ const post = posts.find((item) => item.id === postId);
 
         {!loading && posts.length === 0 && (
 
-          <p>No posts yet. Be the first to post!</p>
+          <p>{isGuest ? "No posts yet." : "No posts yet. Be the first to post!"}</p>
 
         )}
 
@@ -555,6 +553,7 @@ const post = posts.find((item) => item.id === postId);
                 post={post}
 
                 isAuthor={isAuthor}
+                isGuest={isGuest}
 
                 isBusy={isBusy}
 
@@ -588,7 +587,7 @@ const post = posts.find((item) => item.id === postId);
                   // busy={busyPost?.id === post.id && busyPost.action === "comment"}
                   busy={isCommenting}
 
-                  canComment={!isAuthor}
+                  canComment={!isAuthor && !isGuest}
 
                   onChange={(value) =>
 

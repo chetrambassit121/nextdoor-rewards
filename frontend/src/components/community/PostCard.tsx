@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import type { CommunityPost } from "../../services/community";
 import "./PostCard.css";
@@ -9,6 +10,7 @@ import {
 interface PostCardProps {
   post: CommunityPost;
   isAuthor: boolean;
+  isGuest?: boolean;
   isBusy: boolean;
   isLiking: boolean;
   isAnyPostBusy: boolean;
@@ -18,7 +20,6 @@ interface PostCardProps {
   onDelete: (postId: number) => void;
   children?: React.ReactNode;
 }
-
 
 function formatPostDate(date: string): string {
   const timestamp = new Date(date).getTime();
@@ -45,6 +46,7 @@ function formatPostDate(date: string): string {
 export default function PostCard({
   post,
   isAuthor,
+  isGuest = false,
   isBusy,
   isLiking,
   isAnyPostBusy,
@@ -65,12 +67,12 @@ export default function PostCard({
             className="post-card-avatar"
             aria-hidden="true"
           >
-           <div
-            className="post-avatar"
-            style={getAvatarColor(post.author)}
-          >
-            {getInitials(post.author)}
-          </div>
+            <div
+              className="post-avatar"
+              style={getAvatarColor(post.author)}
+            >
+              {getInitials(post.author)}
+            </div>
           </div>
 
           <div className="post-card-author-info">
@@ -94,14 +96,17 @@ export default function PostCard({
 
             <time
               dateTime={post.created_at}
-              title={new Date(post.created_at).toLocaleString()}
+              title={new Date(
+                post.created_at
+              ).toLocaleString()}
             >
               {formatPostDate(post.created_at)}
             </time>
           </div>
         </div>
 
-        {isAuthor && (
+        {/* Only registered authors can delete posts */}
+        {isAuthor && !isGuest && (
           <button
             type="button"
             className="post-card-delete"
@@ -133,35 +138,42 @@ export default function PostCard({
       </div>
 
       <div className="post-card-actions">
-        
-      <button
-        type="button"
-        className={
+        {/* Guests cannot like or unlike posts */}
+        <button
+          type="button"
+          className={
             post.is_liked
-            ? "post-card-action post-card-action-liked"
-            : "post-card-action"
-        }
-        disabled={isAuthor || isAnyPostBusy}
-        aria-pressed={post.is_liked}
-        aria-label={
+              ? "post-card-action post-card-action-liked"
+              : "post-card-action"
+          }
+          disabled={
+            isGuest || isAuthor || isAnyPostBusy
+          }
+          title={
+            isGuest
+              ? "Create an account to like posts"
+              : undefined
+          }
+          aria-pressed={post.is_liked}
+          aria-label={
             post.is_liked
-            ? `Unlike post by ${post.author}`
-            : `Like post by ${post.author}`
-        }
-        onClick={() => onLike(post.id)}
+              ? `Unlike post by ${post.author}`
+              : `Like post by ${post.author}`
+          }
+          onClick={() => onLike(post.id)}
         >
-        <span aria-hidden="true">
+          <span aria-hidden="true">
             {post.is_liked ? "♥" : "♡"}
-        </span>
+          </span>
 
-        {isLiking
-          ? "Updating..."
-          : post.is_liked
-            ? "Liked"
-            : "Like"}
-      </button>
+          {isLiking
+            ? "Updating..."
+            : post.is_liked
+              ? "Liked"
+              : "Like"}
+        </button>
 
-
+        {/* Guests can still view comments */}
         <button
           type="button"
           className="post-card-action"

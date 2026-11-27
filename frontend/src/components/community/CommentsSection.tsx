@@ -49,7 +49,7 @@ export default function CommentsSection({
 
       {comments.length === 0 ? (
         <p className="comments-empty">
-          No comments yet. Start the conversation!
+          {canComment ? "No comments yet. Start the conversation!" : "No comments yet."}
         </p>
       ) : (
         <div className="comments-list">

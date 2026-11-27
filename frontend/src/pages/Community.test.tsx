@@ -20,11 +20,14 @@ vi.mock("../services/community", () => ({
   unlikePost: vi.fn(),
 }));
 
+const authMock = vi.hoisted(() => ({ isGuest: false }));
+
 vi.mock("../context/AuthContext", () => ({
   useAuth: () => ({
+    isGuest: authMock.isGuest,
     user: {
       id: 1,
-      username: "testuser",
+      username: authMock.isGuest ? "guest" : "testuser",
     },
   }),
 }));
@@ -50,6 +53,7 @@ function renderCommunity() {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  authMock.isGuest = false;
 
   vi.mocked(communityApi.getPosts).mockResolvedValue([
     { ...mockPost },
@@ -341,4 +345,33 @@ it("preserves a successful comment when feed refresh fails", async () => {
   expect(input).toHaveValue("");
 });
 
+});
+
+describe("Guest community", () => {
+  it("shows posts but hides creation and disables likes", async () => {
+    authMock.isGuest = true;
+    renderCommunity();
+    expect(await screen.findByText("Hello neighbors!")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    const like = screen.getByRole("button", { name: /like post by neighbor123/i });
+    expect(like).toBeDisabled();
+    fireEvent.click(like);
+    expect(communityApi.likePost).not.toHaveBeenCalled();
+  });
+  it("allows reading comments without submission", async () => {
+    authMock.isGuest = true;
+    vi.mocked(communityApi.getComments).mockResolvedValue([{ id: 10, post: 1, user: "neighbor456", content: "Great post!", created_at: "2026-11-10T18:05:00Z" }]);
+    renderCommunity();
+    fireEvent.click(await screen.findByRole("button", { name: /comments \(0\)/i }));
+    expect(await screen.findByText("Great post!")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(communityApi.createComment).not.toHaveBeenCalled();
+  });
+  it("hides deletion even for a guest-owned post", async () => {
+    authMock.isGuest = true;
+    vi.mocked(communityApi.getPosts).mockResolvedValue([{ ...mockPost, author: "guest" }]);
+    renderCommunity();
+    await screen.findByText("Hello neighbors!");
+    expect(screen.queryByRole("button", { name: /delete post/i })).not.toBeInTheDocument();
+  });
 });

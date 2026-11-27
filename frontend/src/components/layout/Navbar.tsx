@@ -11,7 +11,7 @@ const navigation = [
 ];
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isGuest } = useAuth();
   const navigate = useNavigate();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -101,7 +101,7 @@ export default function Navbar() {
                 {getInitials(user?.username || "")}
               </span>
               <span className="navbar-username">
-                {user?.username}
+                 {isGuest ? "Guest" : user?.username}
               </span>
               <span aria-hidden="true">⌄</span>
             </button>
@@ -114,9 +114,14 @@ export default function Navbar() {
                 <NavLink to="/profile" onClick={closeMenus}>
                   My Profile
                 </NavLink>
-                <NavLink to="/change-password" onClick={closeMenus}>
-                  Change Password
-                </NavLink>
+                {!isGuest && (
+                  <NavLink
+                    to="/change-password"
+                    onClick={closeMenus}
+                  >
+                    Change Password
+                  </NavLink>
+                )}
                 <button type="button" onClick={handleLogout}>
                   Logout
                 </button>
@@ -165,13 +170,15 @@ export default function Navbar() {
           >
             Profile
           </NavLink>
-          <NavLink
-            to="/change-password"
-            className="navbar-mobile-link"
-            onClick={closeMenus}
-          >
-            Change Password
-          </NavLink>
+          {!isGuest && (
+            <NavLink
+              to="/change-password"
+              className="navbar-mobile-link"
+              onClick={closeMenus}
+            >
+              Change Password
+            </NavLink>
+          )}
           <button
             type="button"
             className="navbar-mobile-link navbar-logout"

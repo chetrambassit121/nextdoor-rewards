@@ -15,6 +15,9 @@ vi.mock("../services/profile", () => ({
   updateUserProfile: vi.fn(),
 }));
 
+const authMock = vi.hoisted(() => ({ isGuest: false }));
+vi.mock("../context/AuthContext", () => ({ useAuth: () => authMock }));
+
 const mockGetProfile = vi.mocked(getUserProfile);
 const mockUpdateProfile = vi.mocked(updateUserProfile);
 
@@ -41,6 +44,7 @@ async function loadProfile() {
 describe("Profile Component", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    authMock.isGuest = false;
     mockGetProfile.mockResolvedValue({ ...profile });
   });
 
@@ -301,4 +305,16 @@ describe("Profile Component", () => {
       "Failed to update profile. Please try again."
     );
   });
+});
+
+it("renders guest profile as read-only without editing or password controls", async () => {
+  authMock.isGuest = true;
+  mockGetProfile.mockResolvedValue({ ...profile, username: "guest" });
+  await loadProfile();
+  for (const name of [/first name/i, /last name/i, /email/i]) {
+    expect(screen.getByLabelText(name)).toHaveAttribute("readonly");
+  }
+  expect(screen.queryByRole("button", { name: /save changes|reset/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: /change password/i })).not.toBeInTheDocument();
+  expect(screen.getByText("Guest visitor")).toBeInTheDocument();
 });

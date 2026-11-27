@@ -7,6 +7,7 @@ import {
   type UserProfile,
 } from "../services/profile";
 import "./Profile.css";
+import { useAuth } from "../context/AuthContext";
 
 type EditableField = "first_name" | "last_name" | "email";
 type FormValues = Pick<UserProfile, EditableField>;
@@ -43,6 +44,7 @@ function validateForm(values: FormValues): FormErrors {
 }
 
 export default function Profile() {
+  const { isGuest } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const [form, setForm] = useState<FormValues>({
@@ -105,7 +107,7 @@ export default function Profile() {
   const isValid = Object.keys(validationErrors).length === 0;
 
   function handleChange(field: EditableField, value: string) {
-    if (saving) return;
+    if (isGuest || saving) return;
 
     setForm((previous) => ({
       ...previous,
@@ -122,11 +124,12 @@ export default function Profile() {
   }
 
   function handleBlur(field: EditableField) {
+    if (isGuest) return;
     setTouched((previous) => ({ ...previous, [field]: true }));
   }
 
   function handleReset() {
-    if (!profile || saving) return;
+    if (isGuest || !profile || saving) return;
 
     setForm(getFormValues(profile));
     setSubmitted(false);
@@ -138,7 +141,7 @@ export default function Profile() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (saving || !profile || !hasChanges) return;
+    if (isGuest || saving || !profile || !hasChanges) return;
 
     setSubmitted(true);
     setError("");
@@ -218,7 +221,7 @@ export default function Profile() {
         <div className="profile-identity">
           <h2>{displayName}</h2>
           <p className="profile-username">@{profile.username}</p>
-          <span className="profile-member-badge">Community member</span>
+          <span className="profile-member-badge">{isGuest ? "Guest visitor" : "Community member"}</span>
         </div>
       </section>
 
@@ -226,14 +229,14 @@ export default function Profile() {
         <section className="profile-card" aria-labelledby="personal-info-title">
           <div className="profile-card-header">
             <h2 id="personal-info-title">Personal Information</h2>
-            <p>Update the details associated with your account.</p>
+            <p>{isGuest ? "Guest profile information is read-only." : "Update the details associated with your account."}</p>
           </div>
           <form onSubmit={handleSubmit} noValidate>
             <div className="profile-name-row">
             <div className="profile-field">
               <label htmlFor="firstName">First Name</label>
               <input id="firstName" onBlur={() => handleBlur("first_name")} type="text" autoComplete="given-name" maxLength={151}
-                value={form.first_name} disabled={saving}
+                value={form.first_name} disabled={saving} readOnly={isGuest}
                 aria-invalid={Boolean(fieldError("first_name"))}
                 aria-describedby={fieldError("first_name") ? "firstNameError" : undefined}
                 onChange={(e) => handleChange("first_name", e.target.value)} />
@@ -242,7 +245,7 @@ export default function Profile() {
             <div className="profile-field">
               <label htmlFor="lastName">Last Name</label>
               <input id="lastName" onBlur={() => handleBlur("last_name")} type="text" autoComplete="family-name" maxLength={151}
-                value={form.last_name} disabled={saving}
+                value={form.last_name} disabled={saving} readOnly={isGuest}
                 aria-invalid={Boolean(fieldError("last_name"))}
                 aria-describedby={fieldError("last_name") ? "lastNameError" : undefined}
                 onChange={(e) => handleChange("last_name", e.target.value)} />
@@ -252,13 +255,14 @@ export default function Profile() {
             <div className="profile-field">
               <label htmlFor="email">Email *</label>
               <input id="email" onBlur={() => handleBlur("email")} type="email" autoComplete="email" maxLength={254}
-                value={form.email} disabled={saving}
+                value={form.email} disabled={saving} readOnly={isGuest}
                 aria-invalid={Boolean(fieldError("email"))}
                 aria-describedby={fieldError("email") ? "emailError" : "emailHint"}
                 onChange={(e) => handleChange("email", e.target.value)} />
               {fieldError("email") ? <p className="profile-field-error" id="emailError">{fieldError("email")}</p> : <p className="profile-field-hint" id="emailHint">Used for your account information.</p>}
             </div>
-            {hasChanges && <p className="profile-unsaved" role="status"><span aria-hidden="true">●</span> You have unsaved changes.</p>}
+            {!isGuest && hasChanges && <p className="profile-unsaved" role="status"><span aria-hidden="true">●</span> You have unsaved changes.</p>}
+            {!isGuest && (
             <div className="profile-actions">
               <button className="profile-save" type="submit" disabled={saving || !hasChanges || !isValid}>
                 {saving && <span className="profile-spinner" aria-hidden="true" />}
@@ -266,6 +270,7 @@ export default function Profile() {
               </button>
               <button className="profile-reset" type="button" onClick={handleReset} disabled={saving || !hasChanges}>Reset</button>
             </div>
+            )}
           </form>
           {error && <div role="alert" className="profile-alert profile-alert-error"><span aria-hidden="true">!</span>{error}</div>}
           {success && <div role="status" className="profile-alert profile-alert-success"><span aria-hidden="true">✓</span>{success}</div>}
@@ -279,8 +284,14 @@ export default function Profile() {
           <div className="profile-security-content">
             <div className="profile-security-icon" aria-hidden="true">🔒</div>
             <h3>Password</h3>
-            <p>Update your password regularly to help keep your account secure.</p>
-            <Link className="profile-password-link" to="/change-password">Change Password</Link>
+            {isGuest ? (
+              <p className="profile-guest-notice">Password management is unavailable in guest mode.</p>
+            ) : (
+              <>
+                <p>Update your password regularly to help keep your account secure.</p>
+                <Link className="profile-password-link" to="/change-password">Change Password</Link>
+              </>
+            )}
           </div>
         </section>
       </div>

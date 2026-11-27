@@ -220,3 +220,13 @@
   transform: translate(2px, -2px);
   opacity: 1;
 }
+
+.post-card-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.post-card-action:disabled:hover {
+  background: transparent;
+  transform: none;
+}

@@ -1,0 +1,131 @@
+
+import { api } from "./api";
+
+export interface CommunityPost {
+  id: number;
+  author: string;
+  author_id?: number;
+  content: string;
+  comments_count: number;
+  likes_count: number;
+  is_liked: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommunityComment {
+  id: number;
+  user: string;
+  user_id?: number;
+  post: number;
+  content: string;
+  created_at: string;
+}
+
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+// export async function getPosts(): Promise<CommunityPost[]> {
+//   const response = await api.get<
+//     CommunityPost[] | PaginatedResponse<CommunityPost>
+//   >("/community/posts/");
+
+//   return Array.isArray(response.data)
+//     ? response.data
+//     : response.data.results;
+// }
+export async function getPosts(): Promise<CommunityPost[]> {
+  const response = await api.get<
+    CommunityPost[] | PaginatedResponse<CommunityPost>
+  >("/community/posts/");
+
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  console.error("Unexpected posts API response:", data);
+  throw new Error("Invalid community posts API response");
+}
+
+export async function createPost(
+  content: string
+): Promise<CommunityPost> {
+  const response = await api.post<CommunityPost>(
+    "/community/posts/",
+    { content }
+  );
+
+  return response.data;
+}
+
+export async function deletePost(
+  postId: number
+): Promise<void> {
+  await api.delete(`/community/posts/${postId}/`);
+}
+
+// export async function getComments(
+//   postId: number
+// ): Promise<CommunityComment[]> {
+//   const response = await api.get<
+//     CommunityComment[] | PaginatedResponse<CommunityComment>
+//   >(`/community/posts/${postId}/comments/`);
+
+//   return Array.isArray(response.data)
+//     ? response.data
+//     : response.data.results;
+// }
+export async function getComments(
+  postId: number
+): Promise<CommunityComment[]> {
+  const response = await api.get<
+    CommunityComment[] | PaginatedResponse<CommunityComment>
+  >(`/community/posts/${postId}/comments/`);
+
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  console.error("Unexpected comments API response:", data);
+  throw new Error("Invalid community comments API response");
+}
+
+export async function createComment(
+  postId: number,
+  content: string
+): Promise<CommunityComment> {
+  const response = await api.post<CommunityComment>(
+    `/community/posts/${postId}/comments/`,
+    { content }
+  );
+
+  return response.data;
+}
+
+export async function likePost(
+  postId: number
+): Promise<void> {
+  await api.post(`/community/posts/${postId}/like/`);
+}
+
+export async function unlikePost(
+  postId: number
+): Promise<void> {
+  await api.delete(`/community/posts/${postId}/like/`);
+}

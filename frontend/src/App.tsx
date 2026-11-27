@@ -8,6 +8,7 @@ import Community from "./pages/Community";
 import ChangePassword from "./pages/ChangePassword";
 import RewardsDashboard from "./pages/RewardsDashboard";
 
+import RegisteredUserRoute from "./components/RegisteredUserRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 import PublicUserProfile from "./pages/PublicUserProfile";
@@ -30,10 +31,9 @@ export default function App() {
             path="/users/:userId"
             element={<PublicUserProfile />}
           />
-          <Route
-            path="/change-password"
-            element={<ChangePassword />}
-          />
+          <Route element={<RegisteredUserRoute />}>
+            <Route path="/change-password" element={<ChangePassword />} />
+          </Route>
 
         </Route>
       </Route>
