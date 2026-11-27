@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import type { CommunityPost } from "../../services/community";
 import "./PostCard.css";
-import { getInitials } from "../../utils/avatar";
+import {
+  getInitials,
+  getAvatarColor,
+} from "../../utils/avatar";
 
 interface PostCardProps {
   post: CommunityPost;
@@ -62,7 +65,12 @@ export default function PostCard({
             className="post-card-avatar"
             aria-hidden="true"
           >
+           <div
+            className="post-avatar"
+            style={getAvatarColor(post.author)}
+          >
             {getInitials(post.author)}
+          </div>
           </div>
 
           <div className="post-card-author-info">
