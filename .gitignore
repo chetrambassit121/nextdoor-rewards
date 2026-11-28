@@ -64,3 +64,39 @@ db.sqlite3
 # Python cache
 __pycache__/
 *.pyc
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Local database
+*.sqlite3
+
+# Django generated files
+backend/staticfiles/
+backend/frontend_dist/
+
+# Frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Operating system
+.DS_Store
+
+# Logs
+*.log
+
+# Project review archives
+*.zip
